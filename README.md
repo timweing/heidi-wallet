@@ -19,7 +19,7 @@ solange das Guthaben reicht.
    ├─ HeidiFranc (ERC-20, 2 Dezimalst.)   transfer · faucet() · mint() (nur Owner)
    └─ HeidiVoucher (LinkDrop)             createVoucher() · claim(ephemeral, recipient, sig)
 
- Backend (api/heidi/* bzw. server/)   Reverse-Geocoding · Park-Rückerstattung · Gutschein-Erstellung
+ Backend (api/heidi.js bzw. server/)   Reverse-Geocoding · Park-Rückerstattung · Gutschein-Erstellung
 ```
 
 ## Funktionen
@@ -45,7 +45,7 @@ src/
   style.css          Design (Schweizer Rot/Creme/Gold)
   lib/               config · chain · smart-account · voucher · qr · store · ui
 api/
-  heidi/[...path].js  Vercel-Function → Express-App
+  heidi.js            Vercel-Function → Express-App (rewrite /api/heidi/* in vercel.json)
   _lib/heidi-app.js   /health · /config · /geocode · /parking/start · /parking/stop · /voucher/create
 server/index.js       lokaler Dev-Server um dieselbe App
 scripts/

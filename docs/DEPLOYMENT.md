@@ -28,7 +28,7 @@ löst Remix automatisch von npm auf.
 Die EOA (= `PARK_TREASURY`) braucht HDI, um Rückerstattungen zu zahlen. Sie hat
 schon Startguthaben; sonst in Remix `HeidiFranc.mint(deineEOA, 100000)` (= 1000.00 HDI).
 
-## 3 · Backend deployen (im selben Vercel-Projekt, `api/heidi/*`)
+## 3 · Backend deployen (im selben Vercel-Projekt, `api/heidi.js`)
 Server-Env **ohne** `VITE_`-Präfix (Vercel → Settings → Environment Variables):
 
 ```
