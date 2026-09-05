@@ -1,14 +1,17 @@
 # Testplan – Heidi Wallet (Sepolia)
 
+_Stand: 5. September 2026._
+
 ## Vorbereitung
 | # | Punkt | OK |
 |---|---|---|
 | V1 | `HeidiFranc` + `HeidiVoucher` deployt, Adressen notiert | ☐ |
 | V2 | `HeidiVoucher.token()` == `TOKEN_ADDRESS` (Remix) | ☐ |
-| V3 | Betreiber-EOA hat Sepolia-ETH **und** HDI (für Rückerstattungen) | ☐ |
-| V4 | Pimlico Sponsorship-Policy Sepolia **aktiv** | ☐ |
+| V3 | Betreiber-EOA hat Sepolia-ETH **und** HDI (für Rückerstattungen + Gutschein-Erstellung) | ☐ |
+| V4a | `VITE_PIMLICO_API_KEY` = **API-Key** (nicht die Policy-ID); `curl …pimlico_getUserOperationGasPrice` → `result` | ☐ |
+| V4b | Pimlico Sponsorship-Policy Sepolia **aktiv**, ggf. Contract-Restriction auf Token + Voucher | ☐ |
 | V5 | Backend `…/api/heidi/health` → `{"ok":true}`; Env gesetzt | ☐ |
-| V6 | Frontend deployt, `…/api/heidi/config` liefert die richtigen Adressen | ☐ |
+| V6 | Frontend deployt, `…/api/heidi/config` liefert die richtigen Adressen; UI lädt (nicht nur Kopfzeile) | ☐ |
 | V7 | Zwei Geräte/Profile (Handy A/B) für Sende-Tests | ☐ |
 
 ## T1 · Konto & Faucet
@@ -63,6 +66,17 @@
 | kein HTTPS/localhost | Passkey-/Kamera-Buttons ohne Wirkung |
 | Standort verweigert | „Standort nicht freigegeben", Parken trotzdem möglich |
 | PWA installiert (Android „App installieren" / iOS „Zum Home-Bildschirm") | Vollbild, eigenes Icon, alle Funktionen wie im Browser |
+
+## Fehlerbilder → Ursache
+
+| Im Log / auf dem Schirm | Ursache & Fix |
+|---|---|
+| **„HTTP request failed"** bei Senden / Faucet / Gutschein einlösen | `VITE_PIMLICO_API_KEY` enthält die **Sponsorship-Policy-ID** statt des **API-Keys**, oder der Key ist abgelaufen/domänenbeschränkt → Pimlico `401`. Key aus „API Keys" nehmen, ggf. Domain-Restriction lockern, neu deployen. Die neue Log-Zeile zeigt jetzt `HTTP 401 · …pimlico.io… · body=…`. |
+| **Leeres UI**, nur rote Kopfzeile (Vercel) | `VITE_*` fehlen im Build oder als „Sensitive" angelegt. Als normale Variablen anlegen, `vercel --prod` neu. |
+| **„Konfiguration unvollständig: VITE_…"** (rote Notiz) | genannte Variable fehlt in `.env` / Vercel. |
+| Gutschein zeigt Betrag, aber **„bereits eingelöst oder ungültig"** danach | QR schon benutzt, oder `VITE_VOUCHER_ADDRESS` ≠ Contract, in dem der Gutschein erstellt wurde. |
+| `faucet: cooldown` | Test-Bezug nur alle 24 h. |
+| Parken „Rückerstattung folgt separat" | Backend nicht erreichbar (`/api/heidi/health` prüfen) – Session wurde lokal beendet. |
 
 ## Protokoll
 | Test | Datum | Ergebnis | Tx / Notiz |

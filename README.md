@@ -6,6 +6,10 @@ Passkey-Konto, gasfreien Transaktionen, physischen **Gutscheinen** und einer
 Admin-GUI, **ohne** Whitelist/Registry/Recovery-Modul – ein Transfer gelingt,
 solange das Guthaben reicht.
 
+> **Stand: 5. September 2026** · Contracts auf Sepolia deployt, Frontend + Backend
+> auf Vercel live (`heidi-coin.vercel.app`), Konto/Senden/Faucet/Gutschein/Parken
+> durchgetestet.
+
 ```
  Passkey (WebAuthn)
    │  signiert UserOperation
@@ -42,7 +46,7 @@ src/
   lib/               config · chain · smart-account · voucher · qr · store · ui
 api/
   heidi/[...path].js  Vercel-Function → Express-App
-  _lib/heidi-app.js   /config · /geocode · /parking/stop · /voucher/create
+  _lib/heidi-app.js   /health · /config · /geocode · /parking/start · /parking/stop · /voucher/create
 server/index.js       lokaler Dev-Server um dieselbe App
 scripts/
   build-logo-icons.mjs  PWA-Icons aus images/logo.png (Platzhalter wenn fehlend)
@@ -65,6 +69,16 @@ npm run server             # Backend auf :8788 (fuer Parken-Rueckerstattung / Ge
 Deployment (Remix + Vercel): **[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)**.
 Testplan: **[`docs/TESTPLAN.md`](docs/TESTPLAN.md)**.
 Grafiken: **[`docs/DESIGN-BRIEF.md`](docs/DESIGN-BRIEF.md)**.
+
+## Häufige Stolpersteine
+
+| Symptom | Ursache / Fix |
+|---|---|
+| **„HTTP request failed"** beim Senden/Faucet/Einlösen | `VITE_PIMLICO_API_KEY` enthält die **Sponsorship-Policy-ID** statt des **API-Keys** (beide beginnen mit `pim_`). Pimlico antwortet `401 invalid 'apikey'`. Key aus Pimlico → **API Keys** nehmen; die Policy wirkt automatisch. |
+| **Leeres UI** (nur rote Kopfzeile) auf Vercel | `VITE_*`-Variablen fehlen im Build oder wurden als **„Sensitive"** gespeichert (dann nicht im Client-Bundle). Als normale („Config") Variablen anlegen und **neu deployen** – `VITE_*` wird beim Build eingebacken. |
+| Rote Notiz „Konfiguration unvollständig" | genannte `VITE_*`-Variable fehlt lokal in `.env` bzw. in Vercel. |
+| `faucet: cooldown` | Test-Bezug ist einmal pro 24 h möglich. |
+| `create-voucher.mjs`: „exceeds the balance" | Aussteller-EOA braucht Sepolia-**ETH** *und* **HDI** (Skript sendet normale Transaktionen, nicht gasfrei). |
 
 ## Sicherheitshinweis
 

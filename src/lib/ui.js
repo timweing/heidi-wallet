@@ -22,6 +22,30 @@ export const fmtDate = (s) => (s ? new Date(s * 1000).toLocaleString('de-CH', { 
 export const explorerAddr = (a) => `${CONFIG.EXPLORER}/address/${a}`
 export const explorerTx = (h) => `${CONFIG.EXPLORER}/tx/${h}`
 export const errText = (e) => e?.shortMessage || e?.details || e?.message || String(e)
+
+// Laeuft die viem-Fehlerkette (e.cause…) ab und sammelt die wirklich nuetzlichen
+// Felder: HTTP-Status + URL + Antworttext des Bundlers/Paymasters. Der reine
+// shortMessage ist bei Netzwerkfehlern nur "HTTP request failed".
+export function errDetail(e) {
+  const seen = new Set()
+  const parts = []
+  let cur = e
+  let depth = 0
+  while (cur && typeof cur === 'object' && !seen.has(cur) && depth < 8) {
+    seen.add(cur)
+    depth++
+    const bits = []
+    if (cur.name) bits.push(cur.name)
+    if (cur.status) bits.push(`HTTP ${cur.status}`)
+    if (cur.url) bits.push(cur.url.replace(/apikey=[^&]+/, 'apikey=…'))
+    const msg = cur.shortMessage || cur.details || cur.message
+    if (msg && !bits.some((b) => b === msg)) bits.push(msg)
+    if (cur.body) { try { bits.push('body=' + JSON.stringify(cur.body)) } catch {} }
+    if (bits.length) parts.push(bits.join(' · '))
+    cur = cur.cause
+  }
+  return parts.length ? [...new Set(parts)].join('\n↳ ') : errText(e)
+}
 export const vibrate = (p) => { try { navigator.vibrate?.(p) } catch {} }
 
 export function copy(text, note = 'Kopiert') {

@@ -1,5 +1,10 @@
 # Heidi Wallet — Design-Briefing für Grafiker:in
 
+> **Status (5. September 2026): alle Assets geliefert, optimiert und eingebaut.**
+> Dieses Dokument bleibt als Referenz für Nachlieferungen / Neuauflagen. Die
+> finalen Dateien liegen in `public/` (ausgelieferte Grössen) bzw. `images/`
+> (Originale); PWA-Icons werden per `npm run icons` aus `images/logo.png` erzeugt.
+
 Neue App auf Basis des angehängten Logos und UI-Konzepts. Es ist ein
 **Stablecoin-Wallet** (Token „Heidi Franc", Symbol `HDI`), Thema **Schweizer
 Alpen / Heidi**. Alle Grafiken sollen die Bildsprache des Logos fortführen:

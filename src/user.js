@@ -11,7 +11,7 @@ import { hasStoredAccount, createPasskeyAccount, buildAccount, sendCalls, forget
 import { friendsStore, historyStore, platesStore, parkingStore } from './lib/store.js'
 import { toQRDataURL, buildAddressURI, createScanner } from './lib/qr.js'
 import { buildVoucherClaim, voucherAddressFromKey } from './lib/voucher.js'
-import { $, $$, el, short, fmtDate, explorerAddr, explorerTx, copy, toast, initLog, errText, vibrate } from './lib/ui.js'
+import { $, $$, el, short, fmtDate, explorerAddr, explorerTx, copy, toast, initLog, errText, errDetail, vibrate } from './lib/ui.js'
 import { registerSW } from 'virtual:pwa-register'
 
 registerSW({ immediate: true, onOfflineReady: () => toast('App offline nutzbar') })
@@ -53,7 +53,8 @@ async function busy(btn, fn) {
   try {
     return await fn()
   } catch (e) {
-    log.err(errText(e))
+    console.error('[busy]', e)
+    log.err(errDetail(e))
     toast(errText(e), 'err')
   } finally {
     els.forEach((b) => (b.disabled = false))
@@ -466,6 +467,7 @@ async function redeemVoucher(privKey, amount) {
   if (!sa) throw new Error('Kein Konto')
   const { ephemeral, recipient, signature } = await buildVoucherClaim(privKey, sa.account.address)
   log.line(`Gutschein einlösen (${fmt(amount)} ${meta.symbol}) …`)
+  log.line(`claim(ephemeral=${short(ephemeral)}, recipient=${short(recipient)}) → ${short(VOUCHER())}`)
   const r = await sendCalls(sa.client, [{ to: VOUCHER(), abi: voucherAbi, functionName: 'claim', args: [ephemeral, recipient, signature] }])
   historyStore.add({ direction: 'in', address: VOUCHER(), name: 'Gutschein', amount: fmt(amount), purpose: 'Gutschein eingelöst', txHash: r.txHash })
   log.ok(`Eingelöst · <a href="${explorerTx(r.txHash)}" target="_blank" rel="noreferrer">Tx</a>`)
