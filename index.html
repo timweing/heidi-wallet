@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Heidi Wallet</title>
+    <meta name="description" content="Heidi Wallet – Alpenguthaben, Gutschein & Parken" />
+    <meta name="theme-color" content="#C1121F" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Heidi Wallet" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Heidi Wallet" />
+    <meta property="og:description" content="Alpenguthaben – Stablecoin-Wallet mit Gutschein & Parken" />
+    <meta property="og:image" content="/og-image.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="/og-image.jpg" />
+
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <header class="topbar">
+        <button id="nav-back" class="icon-btn" hidden aria-label="Zurück">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="brand" id="brand-home">
+          <img class="logo" src="/favicon.png" alt="" />
+          <h1>Heidi Wallet</h1>
+        </div>
+        <h1 id="view-title" hidden></h1>
+        <span class="spacer"></span>
+        <span class="role-tag">User</span>
+      </header>
+
+      <div id="cfg-warn" class="notice bad" style="margin:0 18px 12px" hidden></div>
+
+      <!-- Onboarding -->
+      <section id="onboarding" class="hero" hidden>
+        <img class="hero-illustration" src="/onboarding-hero.png" alt="" onerror="this.hidden=true" />
+        <h2>Willkommen bei der Heidi Wallet</h2>
+        <p>
+          Dein Passkey ist dein Zollschlüssel – gesichert über deinen Fingerabdruck
+          oder Face&nbsp;ID. Kein Passwort, kein ETH nötig.
+        </p>
+        <button id="ob-create">Passkey jetzt aktivieren</button>
+        <div id="ob-success" class="success" hidden><span>✓</span> Konto erstellt – bereit.</div>
+        <p class="hint" style="max-width:300px">
+          Verlierst du den Passkey, kannst du in den Einstellungen ein neues Konto
+          erstellen. Das alte Guthaben ist dann nicht mehr erreichbar.
+        </p>
+      </section>
+
+      <main id="views" class="views" hidden>
+        <!-- HOME -->
+        <section class="view" data-view="home">
+          <div class="balance-card" id="balance-card">
+            <div class="balance-label">Alpenguthaben</div>
+            <div class="balance-amount"><span id="bal">0.00</span> <span class="sym" id="sym">HDI</span></div>
+            <div class="balance-sub" id="bal-sub"></div>
+            <div class="balance-addr" id="acc-chip-home"></div>
+          </div>
+
+          <div class="quick-actions">
+            <button class="qa" data-nav="send"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>Senden</button>
+            <button class="qa" data-nav="receive"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M14 14h3v3h-3zM20 14v3M17 20h3"/></svg></span>Empfangen</button>
+            <button class="qa" data-nav="split"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3 2.2-5 5-5s5 2 5 5M14.5 20c.3-2.2 1.8-3.8 4-3.8s3.4 1.4 3.8 3.4"/></svg></span>Aufteilen</button>
+            <button class="qa" data-nav="parking"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 17V7h3.5a2.5 2.5 0 0 1 0 5H9"/></svg></span>Parken</button>
+            <button class="qa" data-nav="voucher"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z"/><path d="M14 5v14"/></svg></span>Gutschein</button>
+          </div>
+
+          <h3 class="sec">Alpen-Aktivitäten</h3>
+          <div id="activity-feed" class="activity-feed"></div>
+        </section>
+
+        <!-- SEND -->
+        <section class="view" data-view="send" hidden>
+          <div class="field"><input id="send-to" class="mono" placeholder="Name oder 0x…" list="friends-list" /></div>
+          <div id="send-friends" class="chip-row"></div>
+          <div class="amount-display"><span class="num" id="send-amount-display">0</span><span class="sym" id="send-sym">HDI</span></div>
+          <div class="field"><input id="send-purpose" placeholder="Verwendungszweck (optional, z. B. Kaffee)" /></div>
+          <div class="keypad" id="send-keypad">
+            <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+            <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+            <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+            <button data-k=".">.</button><button data-k="0">0</button><button data-k="back" class="kp-back">⌫</button>
+          </div>
+          <div class="fee-hint">Gebühren: <b>0.00 HDI</b> · Gas gesponsert</div>
+          <div class="swipe-track" id="send-swipe">
+            <div class="swipe-fill" id="send-swipe-fill"></div>
+            <span class="swipe-label" id="send-swipe-label">Wischen zum Bestätigen via Passkey</span>
+            <div class="swipe-handle" id="send-swipe-handle">›</div>
+          </div>
+          <button id="send-scan" class="ghost">QR scannen</button>
+          <div id="send-scan-mount" class="scan-mount" hidden></div>
+        </section>
+
+        <!-- RECEIVE -->
+        <section class="view" data-view="receive" hidden>
+          <div class="qr-wrap">
+            <img class="bunting" src="/bunting.png" alt="" onerror="this.hidden=true" />
+            <div class="qr-card">
+              <img id="qr-img" class="qr" alt="Mein QR-Code" />
+              <img class="qr-mark" src="/qr-mark.png" alt="" onerror="this.hidden=true" />
+            </div>
+            <div class="field" style="max-width:220px">
+              <label for="recv-amount">Betrag festlegen</label>
+              <input id="recv-amount" type="number" min="0" step="any" placeholder="optional" />
+            </div>
+            <div id="qr-chip" class="addr-chip"></div>
+            <div class="row">
+              <button id="btn-share">Teilen</button>
+              <button id="btn-copy-link" class="ghost">Link kopieren</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SPLIT -->
+        <section class="view" data-view="split" hidden>
+          <h3 class="sec">Freund:innen wählen</h3>
+          <div id="split-friends" class="check-list"></div>
+          <div class="row">
+            <div class="field" style="flex:0 1 180px"><label for="split-total">Gesamtbetrag</label><input id="split-total" type="number" min="0" step="any" placeholder="0.0" /></div>
+            <button id="split-even" class="subtle" style="align-self:end">Gleich aufteilen</button>
+            <button id="split-scan" class="ghost" style="align-self:end">Scannen</button>
+          </div>
+          <div id="split-scan-mount" class="scan-mount" hidden></div>
+          <div id="split-list" class="table-wrap"></div>
+          <div class="row"><span id="split-sum" class="muted" style="font-size:.82rem"></span></div>
+          <button id="btn-split" class="cta-full">Gemeinsame Zahlung senden</button>
+        </section>
+
+        <!-- PARKING -->
+        <section class="view" data-view="parking" hidden>
+          <img class="hero-img" src="/parking-hero.png" alt="" onerror="this.hidden=true" />
+          <div id="park-active" hidden></div>
+          <div id="park-form">
+            <div class="field"><label for="park-plate">Kennzeichen</label>
+              <div class="row"><input id="park-plate" placeholder="z. B. LU 12345" style="text-transform:uppercase" /><button id="park-plate-save" class="subtle sm">Merken</button></div>
+              <div id="park-plate-chips" class="chip-row" style="margin-top:6px"></div>
+            </div>
+            <div class="loc-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg><span id="park-loc">Standort wird ermittelt…</span></div>
+            <h3 class="sec" style="margin-top:6px">Parkdauer</h3>
+            <div class="stepper">
+              <button id="park-minus">−</button>
+              <span class="val"><span id="park-dur">60</span> Min</span>
+              <button id="park-plus">+</button>
+            </div>
+            <div class="fee-hint" style="text-align:left;margin-top:8px">Kosten: <b id="park-cost">–</b> · frühzeitiges Beenden erstattet den Rest zurück</div>
+            <button id="btn-park-start" class="cta-full" style="margin-top:12px">Parken starten</button>
+          </div>
+        </section>
+
+        <!-- VOUCHER -->
+        <section class="view" data-view="voucher" hidden>
+          <img class="hero-img" src="/voucher-hero.png" alt="" onerror="this.hidden=true" />
+          <p class="hint">Papiergutschein mit QR-Code scannen – der Betrag wird deinem Konto gutgeschrieben. Danach ist der Gutschein verbraucht.</p>
+          <button id="btn-voucher-scan" class="cta-full">Gutschein scannen</button>
+          <div id="voucher-scan-mount" class="scan-mount" hidden></div>
+          <div id="voucher-result" hidden></div>
+        </section>
+
+        <!-- FRIENDS -->
+        <section class="view" data-view="friends" hidden>
+          <h3 class="sec">Freunde</h3>
+          <div id="friends" class="table-wrap"></div>
+          <div class="divider"></div>
+          <div class="row">
+            <input id="fr-name" placeholder="Name" style="flex:0 1 120px" />
+            <input id="fr-addr" class="mono" placeholder="0x…" />
+          </div>
+          <div class="row"><button id="fr-scan" class="subtle">Scannen</button><button id="fr-add" class="good">Speichern</button></div>
+          <div id="fr-scan-mount" class="scan-mount" hidden></div>
+        </section>
+
+        <!-- HISTORY -->
+        <section class="view" data-view="history" hidden>
+          <h3 class="sec">Verlauf</h3>
+          <div id="history-feed" class="activity-feed"></div>
+          <button id="history-refresh" class="ghost sm">Aktualisieren</button>
+        </section>
+
+        <!-- SETTINGS -->
+        <section class="view" data-view="settings" hidden>
+          <h3 class="sec">Konto</h3>
+          <dl class="table-wrap" style="display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;font-size:.88rem">
+            <dt class="muted">Smart Account</dt><dd id="set-addr" class="mono">–</dd>
+            <dt class="muted">Owner</dt><dd>Passkey (WebAuthn)</dd>
+            <dt class="muted">On-chain</dt><dd id="set-onchain">–</dd>
+          </dl>
+          <div class="row"><button id="btn-faucet" class="subtle">100 HDI Test-Bezug (Faucet)</button></div>
+          <div class="divider"></div>
+          <div class="row">
+            <button id="set-create" class="ghost">Neues Konto (Notfall)</button>
+            <button id="set-load" class="ghost">Gespeichertes Konto laden</button>
+          </div>
+          <p class="hint">„Neues Konto" erzeugt einen neuen Passkey und eine neue Adresse. <b>Bisheriges Guthaben ist danach nicht mehr erreichbar.</b></p>
+          <details class="log" id="log"><summary>Technisches Log <a href="#" class="log-clear">leeren</a></summary><div class="log-body"></div></details>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" id="bottom-nav" hidden>
+        <button class="nav-item active" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg><span>Home</span></button>
+        <button class="nav-item" data-nav="friends"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><circle cx="17" cy="9" r="2.3"/><path d="M16 14.6c2.7.4 4.5 2.2 4.9 4.9"/></svg><span>Freunde</span></button>
+        <button class="nav-item nav-fab" id="nav-scan" aria-label="Scannen"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M4 16v2a2 2 0 0 0 2 2h2M20 8V6a2 2 0 0 0-2-2h-2M20 16v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3.2"/></svg></button>
+        <button class="nav-item" data-nav="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Verlauf</span></button>
+        <button class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l1.9-1.5-2-3.4-2.2.7a7.7 7.7 0 0 0-2.6-1.5L14 2.5h-4l-.5 2.3a7.7 7.7 0 0 0-2.6 1.5l-2.2-.7-2 3.4L4.6 10.5a7.6 7.6 0 0 0 0 3L2.7 15l2 3.4 2.2-.7c.75.65 1.63 1.16 2.6 1.5l.5 2.3h4l.5-2.3a7.7 7.7 0 0 0 2.6-1.5l2.2.7 2-3.4-1.9-1.5Z"/></svg><span>Mehr</span></button>
+      </nav>
+
+      <div id="nav-scan-overlay" class="scan-overlay" hidden>
+        <div id="nav-scan-mount" class="scan-mount-full"></div>
+        <p>QR eines Freundes oder Gutscheins scannen</p>
+        <button id="nav-scan-cancel" class="ghost">Abbrechen</button>
+      </div>
+
+      <datalist id="friends-list"></datalist>
+    </div>
+
+    <script type="module" src="/src/user.js"></script>
+  </body>
+</html>

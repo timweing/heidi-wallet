@@ -1,0 +1,12 @@
+node_modules
+dist
+dev-dist
+.env
+.env.local
+.DS_Store
+**/.DS_Store
+*.log
+.vercel
+.netlify
+vouchers-out
+addresses.txt

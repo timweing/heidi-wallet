@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/heidi/[...path].js": { "maxDuration": 60 }
+  }
+}
