@@ -13,10 +13,16 @@ import { publicClient, sepolia } from './chain.js'
 import { CONFIG } from './config.js'
 import { accountStore } from './store.js'
 
-const pimlicoClient = createPimlicoClient({
-  transport: http(CONFIG.BUNDLER_URL),
-  entryPoint: { address: entryPoint06Address, version: '0.6' },
-})
+// Lazy: nicht beim Modul-Laden erstellen, sonst wirft http('') bei fehlendem
+// VITE_PIMLICO_API_KEY und die ganze App bleibt weiss.
+let _pimlico
+function pimlicoClient() {
+  if (!CONFIG.BUNDLER_URL) throw new Error('Pimlico nicht konfiguriert – VITE_PIMLICO_API_KEY setzen und neu deployen.')
+  return (_pimlico ??= createPimlicoClient({
+    transport: http(CONFIG.BUNDLER_URL),
+    entryPoint: { address: entryPoint06Address, version: '0.6' },
+  }))
+}
 
 export const hasStoredAccount = () => !!accountStore.get()?.credential
 
@@ -40,13 +46,14 @@ export async function buildAccount() {
     st.address = account.address
     accountStore.set(st)
   }
+  const pc = pimlicoClient()
   const client = createSmartAccountClient({
     account,
     chain: sepolia,
     bundlerTransport: http(CONFIG.BUNDLER_URL),
-    paymaster: pimlicoClient,
+    paymaster: pc,
     userOperation: {
-      estimateFeesPerGas: async () => (await pimlicoClient.getUserOperationGasPrice()).fast,
+      estimateFeesPerGas: async () => (await pc.getUserOperationGasPrice()).fast,
     },
   })
   return { account, client }
