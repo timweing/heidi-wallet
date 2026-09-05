@@ -47,6 +47,9 @@ Diese Backend-Werte dürfen als **„Sensitive"** angelegt werden (Gegenteil der
 `VITE_*` aus Schritt 4) – sie laufen nur serverseitig.
 
 Prüfen: `https://DEIN-APP.vercel.app/api/heidi/health` → `{"ok":true}`.
+Bei `{"ok":false,"missingEnv":[…]}` fehlen genau diese Variablen in Vercel –
+setzen und **neu deployen**. (Ohne sie liefert `/parking/stop` „Backend nicht
+konfiguriert", in der App sichtbar als Fehler bei der Rückerstattung.)
 
 ## 4 · Frontend-Env (`VITE_*`, gleiches Vercel-Projekt)
 ```

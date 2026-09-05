@@ -77,6 +77,7 @@ Grafiken: **[`docs/DESIGN-BRIEF.md`](docs/DESIGN-BRIEF.md)**.
 | **„HTTP request failed"** beim Senden/Faucet/Einlösen | `VITE_PIMLICO_API_KEY` enthält die **Sponsorship-Policy-ID** statt des **API-Keys** (beide beginnen mit `pim_`). Pimlico antwortet `401 invalid 'apikey'`. Key aus Pimlico → **API Keys** nehmen; die Policy wirkt automatisch. |
 | **Leeres UI** (nur rote Kopfzeile) auf Vercel | `VITE_*`-Variablen fehlen im Build oder wurden als **„Sensitive"** gespeichert (dann nicht im Client-Bundle). Als normale („Config") Variablen anlegen und **neu deployen** – `VITE_*` wird beim Build eingebacken. |
 | Rote Notiz „Konfiguration unvollständig" | genannte `VITE_*`-Variable fehlt lokal in `.env` bzw. in Vercel. |
+| **Rückerstattung schlägt fehl** („HTTP 404/500" / „Backend nicht konfiguriert") | Backend-Env (`PARK_TREASURY_PRIVATE_KEY`, `TOKEN_ADDRESS`, … – **ohne** `VITE_`) fehlt in Vercel. `…/api/heidi/health` → `{"ok":false,"missingEnv":[…]}` zeigt welche. Setzen und neu deployen. |
 | `faucet: cooldown` | Test-Bezug ist einmal pro 24 h möglich. |
 | `create-voucher.mjs`: „exceeds the balance" | Aussteller-EOA braucht Sepolia-**ETH** *und* **HDI** (Skript sendet normale Transaktionen, nicht gasfrei). |
 

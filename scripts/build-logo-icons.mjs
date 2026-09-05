@@ -169,6 +169,12 @@ function sample(x, y, sizeDst, extraPad) {
 }
 
 function writeIcon(name, size, extraPad = 0) {
+  // Vorhandene Icons (z.B. vom Grafiker) NICHT ueberschreiben – nur erzeugen,
+  // was fehlt. So degradiert ein fehlendes images/logo.png keinen guten Build.
+  if (!img && existsSync(OUT(name))) {
+    console.log(`vorhanden, behalten: public/${name}`)
+    return
+  }
   writeFileSync(OUT(name), encodePNG(size, size, (x, y) => sample(x, y, size, extraPad)))
   console.log(`geschrieben: public/${name} (${size}x${size})`)
 }

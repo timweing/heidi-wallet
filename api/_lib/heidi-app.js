@@ -30,23 +30,46 @@ const {
   APP_URL = '',
 } = process.env
 
-if (!PARK_TREASURY_PRIVATE_KEY || !TOKEN_ADDRESS) {
-  throw new Error('Missing env: PARK_TREASURY_PRIVATE_KEY / TOKEN_ADDRESS')
+// Fehlende/ungueltige Env NICHT beim Laden werfen – sonst faellt die ganze
+// Function aus (auch /health, /geocode) und Vercel liefert ein undurchsichtiges
+// 500/404. Stattdessen sammeln und pro Route pruefen (requireConfig unten).
+const CONFIG_ERR = []
+
+// MetaMask exportiert den Key ohne "0x"; viem braucht ihn mit. -> normalisieren.
+function loadKey(raw, label) {
+  if (!raw) { CONFIG_ERR.push(label); return null }
+  const hex = raw.trim().replace(/^0x/i, '')
+  if (!/^[0-9a-fA-F]{64}$/.test(hex)) { CONFIG_ERR.push(`${label} (kein 32-Byte-Hex)`); return null }
+  try { return privateKeyToAccount(`0x${hex}`) }
+  catch { CONFIG_ERR.push(`${label} (ungültig)`); return null }
 }
 
 const ON_VERCEL = !!process.env.VERCEL
 const RATE = BigInt(PARK_RATE_PER_MIN) // Basiseinheiten (2 Dezimalst.) pro Minute
 const DECIMALS = 2
 
-const treasury = privateKeyToAccount(PARK_TREASURY_PRIVATE_KEY)
-const issuer = VOUCHER_ISSUER_PRIVATE_KEY ? privateKeyToAccount(VOUCHER_ISSUER_PRIVATE_KEY) : treasury
+const treasury = loadKey(PARK_TREASURY_PRIVATE_KEY, 'PARK_TREASURY_PRIVATE_KEY')
+const issuer = VOUCHER_ISSUER_PRIVATE_KEY ? loadKey(VOUCHER_ISSUER_PRIVATE_KEY, 'VOUCHER_ISSUER_PRIVATE_KEY') : treasury
 
 const publicClient = createPublicClient({ chain: sepolia, transport: http(RPC_URL) })
-const treasuryWallet = createWalletClient({ account: treasury, chain: sepolia, transport: http(RPC_URL) })
-const issuerWallet = createWalletClient({ account: issuer, chain: sepolia, transport: http(RPC_URL) })
+const treasuryWallet = treasury ? createWalletClient({ account: treasury, chain: sepolia, transport: http(RPC_URL) }) : null
+const issuerWallet = issuer ? createWalletClient({ account: issuer, chain: sepolia, transport: http(RPC_URL) }) : null
 
-const TOK = getAddress(TOKEN_ADDRESS)
-const VOU = VOUCHER_ADDRESS ? getAddress(VOUCHER_ADDRESS) : null
+function loadAddr(raw, label, required) {
+  if (!raw) { if (required) CONFIG_ERR.push(label); return null }
+  try { return getAddress(raw.trim()) }
+  catch { CONFIG_ERR.push(`${label} (keine gültige Adresse)`); return null }
+}
+const TOK = loadAddr(TOKEN_ADDRESS, 'TOKEN_ADDRESS', true)
+const VOU = loadAddr(VOUCHER_ADDRESS, 'VOUCHER_ADDRESS', false)
+
+function requireConfig(res) {
+  if (CONFIG_ERR.length) {
+    res.status(503).json({ error: `Backend nicht konfiguriert – fehlende Env: ${CONFIG_ERR.join(', ')}` })
+    return false
+  }
+  return true
+}
 
 const erc20 = parseAbi([
   'function transfer(address to, uint256 amount) returns (bool)',
@@ -84,15 +107,20 @@ app.use(cors({ origin: CORS_ORIGIN === '*' ? '*' : CORS_ORIGIN.split(',').map((s
 
 const r = express.Router()
 
-r.get('/health', (_req, res) => res.json({ ok: true, onVercel: ON_VERCEL }))
+r.get('/health', (_req, res) => res.json({
+  ok: CONFIG_ERR.length === 0,
+  onVercel: ON_VERCEL,
+  missingEnv: CONFIG_ERR,
+}))
 
 r.get('/config', (_req, res) => res.json({
   chainId: sepolia.id,
   token: TOK,
   voucher: VOU,
-  parkTreasury: treasury.address,
+  parkTreasury: treasury?.address ?? null,
   parkRatePerMin: PARK_RATE_PER_MIN,
   decimals: DECIMALS,
+  missingEnv: CONFIG_ERR,
 }))
 
 // ---- Reverse-Geocoding (Nominatim) mit kleinem Cache ----
@@ -123,6 +151,7 @@ r.post('/parking/start', asyncH(async (req, res) => {
 }))
 
 r.post('/parking/stop', asyncH(async (req, res) => {
+  if (!requireConfig(res)) return
   const { account, startedAt, durationMin, costBase } = req.body ?? {}
   if (!isAddress(account)) throw new Error('account ungültig')
   const dur = Math.max(1, Math.floor(Number(durationMin)))
@@ -144,6 +173,7 @@ r.post('/parking/stop', asyncH(async (req, res) => {
 
 // ---- Gutschein anlegen (admin) ----
 r.post('/voucher/create', asyncH(async (req, res) => {
+  if (!requireConfig(res)) return
   if (!ADMIN_SECRET || req.get('x-admin-secret') !== ADMIN_SECRET) {
     return res.status(401).json({ error: 'unauthorized' })
   }
@@ -164,6 +194,13 @@ r.post('/voucher/create', asyncH(async (req, res) => {
   const redeemUrl = `${(APP_URL || '').replace(/\/$/, '')}/?redeem=${priv.replace(/^0x/, '')}`
   res.json({ ok: true, ephemeral, amount: formatUnits(amount, DECIMALS), privKey: priv, redeemUrl, tx })
 }))
+
+// Unbekannte Pfade + Fehler immer als JSON (nicht Vercels HTML-404/500).
+r.use((req, res) => res.status(404).json({ error: `keine Route: ${req.method} ${req.originalUrl}` }))
+r.use((err, _req, res, _next) => {
+  console.error(err)
+  res.status(500).json({ error: err?.shortMessage || err?.message || 'interner Fehler' })
+})
 
 app.use('/api/heidi', r)
 app.use('/', r)

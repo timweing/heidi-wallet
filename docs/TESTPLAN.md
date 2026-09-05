@@ -76,6 +76,7 @@ _Stand: 5. September 2026._
 | **„Konfiguration unvollständig: VITE_…"** (rote Notiz) | genannte Variable fehlt in `.env` / Vercel. |
 | Gutschein zeigt Betrag, aber **„bereits eingelöst oder ungültig"** danach | QR schon benutzt, oder `VITE_VOUCHER_ADDRESS` ≠ Contract, in dem der Gutschein erstellt wurde. |
 | `faucet: cooldown` | Test-Bezug nur alle 24 h. |
+| **Rückerstattung: „HTTP 404" / „HTTP 500"** bzw. „Backend nicht konfiguriert – fehlende Env: …" | Die **Backend-Env** (`PARK_TREASURY_PRIVATE_KEY`, `TOKEN_ADDRESS`, …, **ohne** `VITE_`) fehlt in Vercel → Function startet nicht. `…/api/heidi/health` zeigt `missingEnv`. Variablen setzen, `vercel --prod` neu. |
 | Parken „Rückerstattung folgt separat" | Backend nicht erreichbar (`/api/heidi/health` prüfen) – Session wurde lokal beendet. |
 
 ## Protokoll
