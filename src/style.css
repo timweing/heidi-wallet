@@ -172,7 +172,7 @@ tr:last-child td { border-bottom: 0; }
 .balance-addr .addr-chip { background: rgba(255, 255, 255, 0.16); color: #fff; }
 .balance-addr .addr-chip button { color: rgba(255, 255, 255, 0.85); }
 
-.quick-actions { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 8px; }
 .qa { background: transparent; color: var(--ink); padding: 0; display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 0.7rem; font-weight: 700; }
 .qa-ico {
   width: 50px; height: 50px; border-radius: 50%;
@@ -246,6 +246,42 @@ tr:last-child td { border-bottom: 0; }
 .session-card .sub { opacity: 0.85; font-size: 0.85rem; }
 
 .voucher-amount { font-size: 2.4rem; font-weight: 800; text-align: center; color: var(--red-deep); }
+
+/* ---------------------------------------------------------------- Laden / Ladestation */
+
+#charge-body { display: flex; flex-direction: column; gap: 14px; }
+.kw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kw-btn {
+  background: var(--card); color: var(--ink); border: 1px solid var(--border-strong);
+  border-radius: var(--r-md); padding: 16px 10px; display: flex; flex-direction: column; gap: 4px;
+  align-items: center; box-shadow: var(--shadow-soft);
+}
+.kw-btn:hover:not(:disabled) { border-color: var(--gold); filter: none; }
+.kw-btn .kw-n { font-size: 1.25rem; font-weight: 800; color: var(--red-deep); }
+.kw-btn .kw-p { font-size: 0.8rem; color: var(--muted); font-weight: 700; }
+
+.charge-gauge { height: 16px; border-radius: 999px; background: var(--red-soft); overflow: hidden; }
+.charge-gauge.big { height: 26px; }
+.charge-gauge-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--good), var(--gold)); transition: width 0.6s ease; }
+.charge-stat { display: flex; justify-content: space-between; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.charge-stat b { color: var(--red-deep); }
+
+/* Simulator-Seite /station */
+.station-app { padding-bottom: 30px; }
+.station-app main.views { padding: 4px 18px 26px; }
+.station-stage { position: relative; display: flex; justify-content: center; padding: 8px 0; }
+.station-hero { width: 180px; max-height: 260px; object-fit: contain; }
+.station-lamp { position: absolute; top: 14px; right: calc(50% - 96px); width: 16px; height: 16px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 0 4px rgba(0,0,0,0.06); }
+.station-lamp.free { background: var(--good); box-shadow: 0 0 14px 3px color-mix(in srgb, var(--good) 60%, transparent); }
+.station-lamp.busy { background: var(--red); box-shadow: 0 0 14px 3px color-mix(in srgb, var(--red) 60%, transparent); animation: lamppulse 1.1s ease-in-out infinite; }
+@keyframes lamppulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.station-status { text-align: center; font-size: 1.15rem; font-weight: 800; color: var(--red-deep); }
+.station-meta { display: flex; flex-direction: column; gap: 6px; font-size: 0.84rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 14px; }
+.station-meta .addr-chip { font-size: 0.76rem; }
+.charge-car { display: block; width: 78%; max-width: 300px; margin: 0 auto 4px; }
+.station-qr { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.role-tag.tag-free { background: var(--good-soft); color: var(--good); }
+.role-tag.tag-busy { background: var(--bad-soft); color: var(--bad); }
 
 /* ---------------------------------------------------------------- Bottom nav */
 

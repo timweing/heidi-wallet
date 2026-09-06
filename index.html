@@ -70,6 +70,7 @@
             <button class="qa" data-nav="split"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3 2.2-5 5-5s5 2 5 5M14.5 20c.3-2.2 1.8-3.8 4-3.8s3.4 1.4 3.8 3.4"/></svg></span>Aufteilen</button>
             <button class="qa" data-nav="parking"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 17V7h3.5a2.5 2.5 0 0 1 0 5H9"/></svg></span>Parken</button>
             <button class="qa" data-nav="voucher"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z"/><path d="M14 5v14"/></svg></span>Gutschein</button>
+            <button class="qa" data-nav="charge"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg></span>Laden</button>
           </div>
 
           <h3 class="sec">Alpen-Aktivitäten</h3>
@@ -161,6 +162,19 @@
           <button id="btn-voucher-scan" class="cta-full">Gutschein scannen</button>
           <div id="voucher-scan-mount" class="scan-mount" hidden></div>
           <div id="voucher-result" hidden></div>
+        </section>
+
+        <!-- CHARGE -->
+        <section class="view" data-view="charge" hidden>
+          <img class="hero-img" src="/charge-hero.png" alt="" onerror="this.hidden=true" />
+          <p class="hint">An der Ladesäule den QR-Code scannen – erst dann kannst du die Ladung starten.</p>
+          <button id="btn-charge-scan" class="cta-full" hidden>Ladesäule scannen</button>
+          <div id="charge-scan-mount" class="scan-mount" hidden></div>
+          <div id="charge-body"></div>
+          <button id="charge-refresh" class="ghost sm" hidden>Aktualisieren</button>
+          <p class="hint">Simulierte IoT-Ladestation mit echtem Smart Account.
+            <a href="/station.html" target="_blank" rel="noreferrer">Stations-Ansicht öffnen ↗</a>
+          </p>
         </section>
 
         <!-- FRIENDS -->

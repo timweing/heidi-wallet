@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Heidi Ladestation</title>
+    <meta name="description" content="Simulierte IoT-EV-Ladestation der Heidi Wallet" />
+    <meta name="theme-color" content="#C1121F" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="app station-app">
+      <header class="topbar">
+        <div class="brand">
+          <img class="logo" src="/favicon.png" alt="" />
+          <h1>Heidi Ladestation</h1>
+        </div>
+        <span class="spacer"></span>
+        <span class="role-tag" id="st-tag">IoT</span>
+      </header>
+
+      <main class="views">
+        <div id="st-warn" class="notice bad" hidden></div>
+
+        <div class="station-stage">
+          <img class="station-hero" src="/station-hero.png" alt="" onerror="this.style.display='none'" />
+          <span class="station-lamp" id="st-lamp"></span>
+        </div>
+
+        <div id="st-status" class="station-status">Station wird abgefragt …</div>
+        <div id="st-body"></div>
+
+        <div class="station-meta">
+          <div><span class="muted">Stations-Konto&nbsp;</span><span id="st-acc" class="addr-chip">–</span></div>
+          <div><span class="muted">Guthaben&nbsp;</span><b id="st-bal">–</b></div>
+          <div><span class="muted">Contract&nbsp;</span><span id="st-contract" class="addr-chip">–</span></div>
+        </div>
+
+        <div class="station-qr" id="st-qr" hidden>
+          <div class="qr-card">
+            <img id="st-qr-img" class="qr" alt="QR zum Laden" />
+            <img class="qr-mark" src="/charge-mark.png" alt="" onerror="this.hidden=true" />
+          </div>
+          <p class="hint">Mit der Heidi Wallet scannen zum Laden</p>
+        </div>
+
+        <h3 class="sec">Letzte Ladungen</h3>
+        <div id="st-log" class="activity-feed"></div>
+      </main>
+    </div>
+
+    <script type="module" src="/src/station.js"></script>
+  </body>
+</html>

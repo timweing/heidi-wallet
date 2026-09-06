@@ -1,11 +1,21 @@
 import { defineConfig } from 'vite'
+import { fileURLToPath } from 'node:url'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Einseiten-App (nur User-Wallet, kein Admin). Installierbar als PWA.
+// Wallet (index.html) + Ladestations-Simulator (station.html). Installierbar als PWA.
 export default defineConfig({
   base: process.env.VITE_BASE ?? '/',
   server: { host: true, port: 5174 },
-  build: { target: 'es2022', outDir: 'dist' },
+  build: {
+    target: 'es2022',
+    outDir: 'dist',
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        station: fileURLToPath(new URL('./station.html', import.meta.url)),
+      },
+    },
+  },
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',

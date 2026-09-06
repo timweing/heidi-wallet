@@ -1,6 +1,6 @@
 # Deployment – Heidi Wallet
 
-_Stand: 5. September 2026. Referenz-Deployment: `heidi-coin.vercel.app` (Sepolia)._
+_Stand: 6. September 2026. Referenz-Deployment: `heidi-coin.vercel.app` (Sepolia)._
 
 ## 0 · Voraussetzungen
 - Browser-Wallet (MetaMask) auf **Sepolia**, ~0.1 Sepolia-ETH. Faucets: Google
@@ -56,6 +56,7 @@ konfiguriert", in der App sichtbar als Fehler bei der Rückerstattung.)
 VITE_PIMLICO_API_KEY=pim_…          (API-KEY, nicht die Policy-ID – siehe 6)
 VITE_TOKEN_ADDRESS=0x…              (= TOKEN_ADDRESS)
 VITE_VOUCHER_ADDRESS=0x…           (= VOUCHER_ADDRESS)
+VITE_CHARGER_ADDRESS=0x…           (optional, EV-Ladestation – siehe 8)
 VITE_PARK_TREASURY=0x…             (Adresse deiner EOA)
 VITE_PARK_RATE_PER_MIN=5
 VITE_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
@@ -112,6 +113,44 @@ node scripts/create-voucher.mjs 12.50 5   # 5 Stück à 12.50 HDI
 QR-PNGs landen in `vouchers-out/` → ausdrucken. Alternativ per Backend:
 `POST /api/heidi/voucher/create` mit Header `x-admin-secret` und `{"amount":"20"}`.
 
-## 8 · Contracts verifizieren (optional)
-Remix-Plugin „Contract Verification – Etherscan" für beide Contracts, damit die
+## 8 · EV-Ladestation (optional)
+
+Simulierte IoT-Ladestation mit echtem Smart Account. Reihenfolge wichtig – das
+Smart Account muss existieren, bevor der Contract deployt wird.
+
+### 8.1 · Stations-Smart-Account erzeugen
+```bash
+# .env muss VITE_PIMLICO_API_KEY (+ optional VITE_RPC_URL) enthalten
+node scripts/create-station-account.mjs
+```
+Gibt **Owner-Key**, **Owner-Adresse** und **Station-SA** aus und deployt das
+Konto on-chain (gasfreie No-Op-UserOperation über Pimlico). Owner-Key sicher
+notieren; `STATION_OWNER_PRIVATE_KEY` in `.env` ist nur nötig, falls die Station
+später aktiv werden soll.
+
+### 8.2 · `HeidiCharger` deployen (Remix)
+`contracts/HeidiCharger.sol`, Constructor:
+
+| Param | Wert |
+|---|---|
+| `token_` | `TOKEN_ADDRESS` (HeidiFranc) |
+| `stationAccount_` | Station-SA aus 8.1 |
+| `pricePerKwBase_` | `30`  (= 0.30 HDI je kW) |
+| `secondsPerKw_` | `6`  (Zeitraffer: 20 kW ≈ 2 min) |
+
+Deploy → Adresse = **`CHARGER_ADDRESS`**.
+
+### 8.3 · Frontend-Env
+```
+VITE_CHARGER_ADDRESS=0x…      (= CHARGER_ADDRESS)
+```
+Als **Config** anlegen, `vercel --prod` neu. Ohne die Variable ist „Laden"
+inaktiv (kein Fehler). Danach:
+- Wallet → **Laden**: Station frei → kW wählen → eine UserOperation.
+- Simulator: `https://DEIN-APP.vercel.app/station` (bzw. `/station.html`).
+
+Die Station braucht **kein** Backend und **kein** ETH – sie empfängt nur HDI.
+
+## 9 · Contracts verifizieren (optional)
+Remix-Plugin „Contract Verification – Etherscan" für alle Contracts, damit die
 App-Nutzer den Code auf `sepolia.etherscan.io` sehen.

@@ -4,6 +4,7 @@
     "api/heidi.js": { "maxDuration": 60 }
   },
   "rewrites": [
-    { "source": "/api/heidi/:path*", "destination": "/api/heidi" }
+    { "source": "/api/heidi/:path*", "destination": "/api/heidi" },
+    { "source": "/station", "destination": "/station.html" }
   ]
 }

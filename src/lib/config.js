@@ -10,6 +10,7 @@ export const CONFIG = {
 
   TOKEN_ADDRESS: import.meta.env.VITE_TOKEN_ADDRESS,
   VOUCHER_ADDRESS: import.meta.env.VITE_VOUCHER_ADDRESS,
+  CHARGER_ADDRESS: import.meta.env.VITE_CHARGER_ADDRESS, // EV-Ladestation (HeidiCharger), optional
   PARK_TREASURY: import.meta.env.VITE_PARK_TREASURY,
   PARK_RATE_PER_MIN: Number(import.meta.env.VITE_PARK_RATE_PER_MIN || 5), // HDI-Basiseinheiten/Min
 

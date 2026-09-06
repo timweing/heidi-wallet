@@ -1,6 +1,7 @@
 # Heidi Wallet — Design-Briefing für Grafiker:in
 
-> **Status (5. September 2026): alle Assets geliefert, optimiert und eingebaut.**
+> **Status (6. September 2026): alle Assets geliefert, optimiert und eingebaut**
+> – inkl. der Ladestations-Grafiken (11–13, siehe unten).
 > Dieses Dokument bleibt als Referenz für Nachlieferungen / Neuauflagen. Die
 > finalen Dateien liegen in `public/` (ausgelieferte Grössen) bzw. `images/`
 > (Originale); PWA-Icons werden per `npm run icons` aus `images/logo.png` erzeugt.
@@ -112,6 +113,30 @@ die deutsche Bildunterschrift selbst):
   zentriert auf Creme.
 - **Format:** exakt **1200 × 630 px**, PNG oder JPG.
 - **Dateiname:** `og-image.png`
+
+### 11 · Laden-Kopfbild
+- **Inhalt:** ein E-Auto an einer Alpen-Ladesäule, Kabel eingesteckt,
+  Bergpanorama / Chalet dahinter.
+- **Format:** PNG **640 × 400 px**, transparent.
+- **Dateiname:** `charge-hero.png`
+
+### 12 · Leerzustand „Laden" & Ladeauto (optional)
+- `empty-charge.png` — **240 × 240 px**, transparent, ohne Text: aufgerolltes
+  Typ-2-Ladekabel. Kontext „Keine Ladung aktiv".
+- `charge-car.png` — **480 × 260 px**, transparent: E-Auto Seitenansicht mit
+  eingestecktem Kabel (für die Ladeanimation auf `/station`).
+
+### 13 · Ladesäule (Simulator-Held)
+- **Inhalt:** die Ladesäule allein – Säule mit Display, Typ-2-Buchse, Standfuss,
+  dezent alpines Umfeld. **Neutral** (frei/besetzt macht die Seite per Farbe).
+- **Format:** PNG, Hochformat ~**720 × 960 px**, transparent.
+- **Dateiname:** `station-hero.png`
+
+### 14 · Laden – Erfolg & QR-Marke (optional)
+- `charge-done.png` — **240 × 240 px**, transparent: volle Batterie + Häkchen in
+  Alpengrün. Zustand „Ladung abgeschlossen" (Wallet + `/station`).
+- `charge-mark.png` — **200 × 200 px**, transparent: Blitz-/Stecker-Glyphe im
+  Markenstil, wird mittig in den Lade-QR der Stationsseite gelegt.
 
 ---
 

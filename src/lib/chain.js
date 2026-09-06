@@ -12,10 +12,25 @@ export const tokenAbi = parseAbi([
   'function decimals() view returns (uint8)',
   'function balanceOf(address) view returns (uint256)',
   'function transfer(address to, uint256 amount) returns (bool)',
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function allowance(address owner, address spender) view returns (uint256)',
   'function faucet()',
   'function lastFaucet(address) view returns (uint256)',
   'event Transfer(address indexed from, address indexed to, uint256 value)',
 ])
+
+export const chargerAbi = parseAbi([
+  'function token() view returns (address)',
+  'function stationAccount() view returns (address)',
+  'function pricePerKwBase() view returns (uint256)',
+  'function secondsPerKw() view returns (uint256)',
+  'function isFree() view returns (bool)',
+  'function quote(uint8 kW) view returns (uint256)',
+  'function startCharge(uint8 kW)',
+  'function status() view returns (bool free, address user, uint8 kW, uint64 startedAt, uint64 endsAt, uint256 paid, uint256 remaining)',
+  'event ChargeStarted(address indexed user, uint8 kW, uint256 paid, uint64 startedAt, uint64 endsAt)',
+])
+const ChargeStartedEvent = chargerAbi.find((x) => x.type === 'event' && x.name === 'ChargeStarted')
 
 export const voucherAbi = parseAbi([
   'function amountOf(address) view returns (uint256)',
@@ -30,6 +45,7 @@ const TransferEvent = tokenEvents[0]
 
 const TOK = () => getAddress(CONFIG.TOKEN_ADDRESS)
 const VOU = () => getAddress(CONFIG.VOUCHER_ADDRESS)
+const CHG = () => getAddress(CONFIG.CHARGER_ADDRESS)
 
 export async function readBalance(address) {
   return publicClient.readContract({ address: TOK(), abi: tokenAbi, functionName: 'balanceOf', args: [getAddress(address)] })
@@ -57,6 +73,50 @@ export async function readVoucher(ephemeralAddr) {
     address: VOU(), abi: voucherAbi, functionName: 'previewVoucher', args: [getAddress(ephemeralAddr)],
   })
   return { amount, claimed: isClaimed }
+}
+
+// ---------------------------------------------------------------- EV-Ladestation
+
+export async function readChargerMeta() {
+  const [stationAccount, pricePerKwBase, secondsPerKw] = await Promise.all([
+    publicClient.readContract({ address: CHG(), abi: chargerAbi, functionName: 'stationAccount' }),
+    publicClient.readContract({ address: CHG(), abi: chargerAbi, functionName: 'pricePerKwBase' }),
+    publicClient.readContract({ address: CHG(), abi: chargerAbi, functionName: 'secondsPerKw' }),
+  ])
+  return { stationAccount: getAddress(stationAccount), pricePerKwBase, secondsPerKw }
+}
+
+export async function readChargerStatus() {
+  const [free, user, kW, startedAt, endsAt, paid, remaining] = await publicClient.readContract({
+    address: CHG(), abi: chargerAbi, functionName: 'status',
+  })
+  return {
+    free,
+    user: user === '0x0000000000000000000000000000000000000000' ? null : getAddress(user),
+    kW: Number(kW),
+    startedAt: Number(startedAt),
+    endsAt: Number(endsAt),
+    paid,
+    remaining: Number(remaining),
+  }
+}
+
+export async function readChargeLog({ limit = 8 } = {}) {
+  const latest = await publicClient.getBlockNumber()
+  const from = latest > 100000n ? latest - 100000n : 0n
+  const logs = await scanLogs(CHG(), ChargeStartedEvent, from, latest)
+  return logs
+    .map((l) => ({
+      user: getAddress(l.args.user),
+      kW: Number(l.args.kW),
+      paid: l.args.paid,
+      startedAt: Number(l.args.startedAt),
+      endsAt: Number(l.args.endsAt),
+      txHash: l.transactionHash,
+      block: l.blockNumber,
+    }))
+    .sort((a, b) => Number(b.block - a.block))
+    .slice(0, limit)
 }
 
 // getLogs mit Fallback auf kleine Block-Fenster (RPC-Range-Limits).

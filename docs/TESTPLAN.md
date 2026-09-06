@@ -1,6 +1,6 @@
 # Testplan – Heidi Wallet (Sepolia)
 
-_Stand: 5. September 2026._
+_Stand: 6. September 2026._
 
 ## Vorbereitung
 | # | Punkt | OK |
@@ -13,6 +13,7 @@ _Stand: 5. September 2026._
 | V5 | Backend `…/api/heidi/health` → `{"ok":true}`; Env gesetzt | ☐ |
 | V6 | Frontend deployt, `…/api/heidi/config` liefert die richtigen Adressen; UI lädt (nicht nur Kopfzeile) | ☐ |
 | V7 | Zwei Geräte/Profile (Handy A/B) für Sende-Tests | ☐ |
+| V8 | *(für T7)* `HeidiCharger` deployt (`stationAccount()` = Station-SA), `VITE_CHARGER_ADDRESS` gesetzt | ☐ |
 
 ## T1 · Konto & Faucet
 1. `/` öffnen → **Passkey jetzt aktivieren** → Smart-Account-Adresse erscheint.
@@ -55,11 +56,28 @@ _Stand: 5. September 2026._
 5. Ohne Backend erreichbar: „Beendet – Rückerstattung folgt separat", Session
    wird lokal geschlossen.
 
-## T7 · Notfall-Konto
+## T7 · Laden (EV-Ladestation)
+Voraussetzung: `HeidiCharger` deployt, `VITE_CHARGER_ADDRESS` gesetzt, Wallet hat HDI.
+1. `/station.html` öffnen → **FREI**, grünes Lämpchen, QR sichtbar, Stations-Konto + Guthaben.
+2. Wallet → **Laden** → zeigt **nur** „Ladesäule scannen" (keine kW-Auswahl ohne Scan).
+   „Ladesäule scannen" → QR von `/station.html` scannen → Toast „Ladesäule erkannt" →
+   „Station frei", vier Buttons `5 / 10 / 15 / 20 kW` mit Preis (`0.30 HDI` pro kW → 5 kW = `1.50`).
+   *(Alternativ: QR mit der Handy-Kamera → Deeplink `?charge=…` öffnet die Wallet direkt in „Laden".)*
+3. **10 kW** tippen → Passkey → Toast „10 kW – dein Auto wird geladen". Verlauf: `-3.00 HDI`,
+   Zweck „10 kW laden". Etherscan: HDI ging an das **Stations-Smart-Account**.
+4. App zeigt Fortschrittsbalken + „noch mm:ss"; `/station.html` zeigt **BESETZT** (rot,
+   Puls), `%` und `kW von 10`. Nach `10 × 6 s = 60 s` → beide zeigen „abgeschlossen",
+   Station wieder **FREI**.
+5. Während einer laufenden Ladung erneut kW tippen → „Station ist gerade besetzt".
+6. QR von `/station.html` mit dem Wallet-Scanner (FAB) scannen → springt direkt in „Laden" (freigeschaltet).
+7. „Laden" verlassen und neu öffnen → wieder gesperrt, „Ladesäule scannen" nötig.
+8. Ohne `VITE_CHARGER_ADDRESS`: „Laden" zeigt „Ladestation nicht konfiguriert" (kein Crash).
+
+## T8 · Notfall-Konto
 1. „Mehr" → **Neues Konto (Notfall)** → Bestätigen → neuer Passkey, neue Adresse,
    Saldo `0.00`. Altes Guthaben ist über diese App nicht mehr erreichbar.
 
-## T8 · Randfälle
+## T9 · Randfälle
 | Fall | Erwartet |
 |---|---|
 | `VITE_*` fehlt | rote Notiz oben, Log-Eintrag |
@@ -78,6 +96,9 @@ _Stand: 5. September 2026._
 | `faucet: cooldown` | Test-Bezug nur alle 24 h. |
 | **Rückerstattung: „HTTP 404" / „HTTP 500"** bzw. „Backend nicht konfiguriert – fehlende Env: …" | Die **Backend-Env** (`PARK_TREASURY_PRIVATE_KEY`, `TOKEN_ADDRESS`, …, **ohne** `VITE_`) fehlt in Vercel → Function startet nicht. `…/api/heidi/health` zeigt `missingEnv`. Variablen setzen, `vercel --prod` neu. |
 | Parken „Rückerstattung folgt separat" | Backend nicht erreichbar (`/api/heidi/health` prüfen) – Session wurde lokal beendet. |
+| Laden: **„Ladestation nicht konfiguriert"** | `VITE_CHARGER_ADDRESS` fehlt im Build. Setzen, `vercel --prod` neu. |
+| Laden: **„Station nicht erreichbar"** / `/station.html` rote Notiz | `VITE_CHARGER_ADDRESS` zeigt nicht auf einen `HeidiCharger`-Contract auf Sepolia, oder RPC down. Adresse + `VITE_RPC_URL` prüfen. |
+| Laden: **„Station besetzt"** trotz freier Säule | Chain-`status()` sagt `endsAt` liegt noch in der Zukunft. „Aktualisieren" tippen; ggf. bis `endsAt` warten. |
 
 ## Protokoll
 | Test | Datum | Ergebnis | Tx / Notiz |
@@ -88,5 +109,6 @@ _Stand: 5. September 2026._
 | T4 | | | |
 | T5 | | | |
 | T6 | | | |
-| T7 | | | |
+| T7 (Laden) | | | |
 | T8 | | | |
+| T9 | | | |

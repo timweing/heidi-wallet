@@ -1,12 +1,12 @@
 // ============================================================================
 //  Heidi Wallet – Frontend
 //  Passkey -> Coinbase Smart Account (Single-Owner) -> Pimlico (gasfrei)
-//  Senden / Empfangen (QR) / Freunde / Alpen-Split / Gutschein / Parken.
+//  Senden / Empfangen (QR) / Freunde / Alpen-Split / Gutschein / Parken / Laden.
 // ============================================================================
 
 import { parseUnits, formatUnits, isAddress } from 'viem'
 import { CONFIG, configProblems } from './lib/config.js'
-import { tokenAbi, voucherAbi, getAddress, readBalance, readTokenMeta, isDeployed, readTokenHistory, readVoucher } from './lib/chain.js'
+import { tokenAbi, voucherAbi, chargerAbi, getAddress, readBalance, readTokenMeta, isDeployed, readTokenHistory, readVoucher, readChargerMeta, readChargerStatus } from './lib/chain.js'
 import { hasStoredAccount, createPasskeyAccount, buildAccount, sendCalls, forgetAccount } from './lib/smart-account.js'
 import { friendsStore, historyStore, platesStore, parkingStore } from './lib/store.js'
 import { toQRDataURL, buildAddressURI, createScanner } from './lib/qr.js'
@@ -25,9 +25,15 @@ let parkDur = 60
 let parkGeo = { lat: null, lng: null, name: 'Standort wird ermittelt…' }
 let parkTimer = 0
 let pendingVoucherKey = null
+let chargerMeta = null
+let chargeTimer = 0
+let chargeUnlocked = false // erst nach Scan des Ladesäulen-QR (oder ?charge=-Deeplink)
 
+const KW_OPTIONS = [5, 10, 15, 20]
 const TOKEN = () => getAddress(CONFIG.TOKEN_ADDRESS)
 const VOUCHER = () => getAddress(CONFIG.VOUCHER_ADDRESS)
+const CHARGER = () => getAddress(CONFIG.CHARGER_ADDRESS)
+const mmss = (s) => `${String(Math.floor(Math.max(0, s) / 60)).padStart(2, '0')}:${String(Math.max(0, s) % 60).padStart(2, '0')}`
 const fmt = (base) => Number(formatUnits(base, meta.decimals)).toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const parseAmt = (s) => parseUnits(String(s), meta.decimals)
 
@@ -80,7 +86,7 @@ function emptyState(img, text) {
 
 // ---------------------------------------------------------------- navigation
 
-const TITLES = { send: 'Senden', receive: 'Empfangen', split: 'Alpen-Split', parking: 'Parken', voucher: 'Gutschein', friends: 'Freunde', history: 'Verlauf', settings: 'Mehr' }
+const TITLES = { send: 'Senden', receive: 'Empfangen', split: 'Alpen-Split', parking: 'Parken', voucher: 'Gutschein', charge: 'Laden', friends: 'Freunde', history: 'Verlauf', settings: 'Mehr' }
 
 function showView(name) {
   $$('.view').forEach((v) => (v.hidden = v.dataset.view !== name))
@@ -100,6 +106,13 @@ function showView(name) {
   if (name === 'history') loadHistory().catch((e) => log.err(errText(e)))
   if (name === 'parking') renderParking()
   if (name === 'voucher') resetVoucherView()
+  if (name === 'charge') {
+    renderCharge().catch((e) => log.err(errText(e)))
+  } else {
+    clearTimeout(chargeTimer)
+    chargeScanner.stop()
+    chargeUnlocked = false // beim Verlassen wieder sperren – Scan an der Säule nötig
+  }
 }
 
 // ---------------------------------------------------------------- account
@@ -130,6 +143,13 @@ async function initAccount() {
     history.replaceState(null, '', location.pathname)
     showView('voucher')
     handleVoucher('0x' + m[2]).catch((e) => toast(errText(e), 'err'))
+  }
+
+  // Ladestations-Deeplink (?charge=0x...) – zählt als Scan an der Säule
+  if (/[?&]charge=0x[0-9a-fA-F]{40}/.test(location.search)) {
+    history.replaceState(null, '', location.pathname)
+    chargeUnlocked = true
+    showView('charge')
   }
 }
 
@@ -478,6 +498,115 @@ async function redeemVoucher(privKey, amount) {
   showView('home')
 }
 
+// ---------------------------------------------------------------- Laden (EV-Ladestation)
+
+async function ensureChargerMeta() {
+  if (!chargerMeta) chargerMeta = await readChargerMeta()
+  return chargerMeta
+}
+
+function stationChip(addr) {
+  return el('div', { class: 'row', style: 'justify-content:center;gap:6px' },
+    el('span', { class: 'muted', style: 'font-size:.78rem' }, 'Stations-Konto'), addrChip(addr))
+}
+
+async function renderCharge() {
+  clearTimeout(chargeTimer)
+  const box = $('#charge-body')
+  const scanBtn = $('#btn-charge-scan')
+  if (!isAddress(CONFIG.CHARGER_ADDRESS)) {
+    scanBtn.hidden = true
+    $('#charge-refresh').hidden = true
+    box.replaceChildren(emptyState('/empty-charge.png', 'Ladestation nicht konfiguriert – VITE_CHARGER_ADDRESS fehlt.'))
+    return
+  }
+  if (!chargeUnlocked) {
+    scanBtn.hidden = false
+    $('#charge-refresh').hidden = true
+    box.replaceChildren(emptyState('/empty-charge.png', 'Scanne den QR-Code an der Ladesäule, um sie freizuschalten.'))
+    return
+  }
+  scanBtn.hidden = true
+  $('#charge-refresh').hidden = false
+  box.replaceChildren(el('div', { class: 'empty' }, 'Ladestation wird abgefragt …'))
+  let m, st
+  try {
+    m = await ensureChargerMeta()
+    st = await readChargerStatus()
+  } catch (e) {
+    box.replaceChildren(emptyState('/empty-charge.png', `Station nicht erreichbar: ${errText(e)}`))
+    return
+  }
+  const mine = st.user && sa && st.user.toLowerCase() === sa.account.address.toLowerCase()
+
+  if (!st.free) {
+    renderChargeProgress(box, m, st, mine)
+    return
+  }
+
+  const price = (kw) => fmt(BigInt(kw) * m.pricePerKwBase)
+  const grid = el('div', { class: 'kw-grid' }, ...KW_OPTIONS.map((kw) =>
+    el('button', { class: 'kw-btn', onclick: (e) => busy([...$$('.kw-btn')], () => startCharge(kw)) },
+      el('span', { class: 'kw-n' }, `${kw} kW`),
+      el('span', { class: 'kw-p' }, `${price(kw)} ${meta.symbol}`),
+    ),
+  ))
+  box.replaceChildren(
+    el('div', { class: 'pill pill-good', style: 'align-self:center' }, 'Station frei'),
+    el('p', { class: 'hint', style: 'text-align:center' }, `${fmt(m.pricePerKwBase)} ${meta.symbol} pro kW · Gas gesponsert`),
+    grid,
+    stationChip(m.stationAccount),
+  )
+}
+
+function renderChargeProgress(box, m, st, mine) {
+  const total = Math.max(1, st.endsAt - st.startedAt)
+  const tick = () => {
+    const now = Math.floor(Date.now() / 1000)
+    const left = Math.max(0, st.endsAt - now)
+    const done = left === 0
+    const pct = Math.min(100, Math.round(((total - left) / total) * 100))
+    const kwNow = Math.min(st.kW, Math.round((st.kW * (total - left)) / total))
+    const doneImg = done ? el('img', { src: '/charge-done.png', alt: '', class: 'charge-car', onerror: (e) => e.target.remove() }) : el('span')
+    box.replaceChildren(
+      doneImg,
+      el('div', { class: `pill ${done ? 'pill-good' : 'pill-warn'}`, style: 'align-self:center' }, done ? 'Ladung abgeschlossen' : 'Station lädt'),
+      el('div', { class: 'charge-gauge' }, el('div', { class: 'charge-gauge-fill', style: `width:${pct}%` })),
+      el('div', { class: 'charge-stat' },
+        el('div', {}, el('b', {}, `${kwNow} / ${st.kW} kW`), ' geladen'),
+        el('div', {}, done ? 'fertig' : `noch ${mmss(left)}`)),
+      el('p', { class: 'hint', style: 'text-align:center' },
+        `${mine ? 'Deine Ladung' : `Belegt von ${short(st.user)}`} · ${fmt(st.paid)} ${meta.symbol} bezahlt`),
+      done ? el('button', { class: 'cta-full', onclick: () => renderCharge() }, 'Aktualisieren') : el('span'),
+      stationChip(m.stationAccount),
+    )
+    if (!done) chargeTimer = setTimeout(tick, 1000)
+  }
+  tick()
+}
+
+async function startCharge(kW) {
+  if (!sa) throw new Error('Kein Konto')
+  const m = await ensureChargerMeta()
+  const st = await readChargerStatus()
+  if (!st.free) { toast('Station ist gerade besetzt', 'err'); return renderCharge() }
+  const cost = BigInt(kW) * m.pricePerKwBase
+  const bal = await readBalance(sa.account.address).catch(() => 0n)
+  if (bal < cost) { toast(`Zu wenig Guthaben – ${fmt(cost)} ${meta.symbol} nötig`, 'err'); return }
+  toast('Signiere mit Passkey …')
+  log.line(`Laden: ${kW} kW für ${fmt(cost)} ${meta.symbol} …`)
+  const r = await sendCalls(sa.client, [
+    { to: TOKEN(), abi: tokenAbi, functionName: 'approve', args: [CHARGER(), cost] },
+    { to: CHARGER(), abi: chargerAbi, functionName: 'startCharge', args: [kW] },
+  ])
+  historyStore.add({ direction: 'out', address: CHARGER(), name: 'Ladestation', amount: fmt(cost), purpose: `${kW} kW laden`, txHash: r.txHash })
+  log.ok(`Ladung gestartet · Block ${r.block} · <a href="${explorerTx(r.txHash)}" target="_blank" rel="noreferrer">Tx</a> · Gas gesponsert`)
+  vibrate([15, 30, 15])
+  toast(`${kW} kW – dein Auto wird geladen`, 'ok')
+  await refresh()
+  await renderCharge()
+}
+
 // ---------------------------------------------------------------- Parking (UI-Demo)
 
 function parkCostBase() {
@@ -611,7 +740,13 @@ const sendScanner = createScanner($('#send-scan-mount'))
 const splitScanner = createScanner($('#split-scan-mount'))
 const frScanner = createScanner($('#fr-scan-mount'))
 const voucherScanner = createScanner($('#voucher-scan-mount'))
+const chargeScanner = createScanner($('#charge-scan-mount'))
 const navScanner = createScanner($('#nav-scan-mount'))
+
+function isChargerQR(p) {
+  return p.kind === 'address' && isAddress(CONFIG.CHARGER_ADDRESS) &&
+    p.address.toLowerCase() === CONFIG.CHARGER_ADDRESS.toLowerCase()
+}
 
 function openNavScan() {
   $('#nav-scan-overlay').hidden = false
@@ -620,6 +755,9 @@ function openNavScan() {
     if (p.kind === 'voucher') {
       showView('voucher')
       handleVoucher(p.privKey).catch((e) => toast(errText(e), 'err'))
+    } else if (isChargerQR(p)) {
+      chargeUnlocked = true
+      showView('charge')
     } else {
       showView('send')
       $('#send-to').value = p.address
@@ -679,6 +817,19 @@ function wire() {
   // Gutschein
   $('#btn-voucher-scan').onclick = () =>
     voucherScanner.start((p) => { if (p.kind === 'voucher') handleVoucher(p.privKey).catch((e) => toast(errText(e), 'err')); else toast('Kein Gutschein-QR', 'err') }).catch((e) => toast(errText(e), 'err'))
+
+  // Laden
+  $('#btn-charge-scan').onclick = () =>
+    chargeScanner.start((p) => {
+      if (isChargerQR(p)) {
+        chargeUnlocked = true
+        toast('Ladesäule erkannt', 'ok')
+        renderCharge().catch((e) => log.err(errText(e)))
+      } else {
+        toast('Kein Ladesäulen-QR', 'err')
+      }
+    }).catch((e) => toast(errText(e), 'err'))
+  $('#charge-refresh').onclick = () => renderCharge().catch((e) => toast(errText(e), 'err'))
 
   // Parken
   $('#park-minus').onclick = () => { parkDur = Math.max(15, parkDur - 15); renderParking() }

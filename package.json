@@ -11,6 +11,7 @@
     "build": "vite build",
     "preview": "vite preview --host",
     "voucher": "node scripts/create-voucher.mjs",
+    "station-account": "node scripts/create-station-account.mjs",
     "server": "node server/index.js"
   },
   "dependencies": {
