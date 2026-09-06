@@ -2,14 +2,14 @@
 
 Stablecoin-Wallet (Token **Heidi Franc**, `HDI`, 2 Nachkommastellen) mit
 Passkey-Konto, gasfreien Transaktionen, physischen **Gutscheinen**, einer
-**Parken**-Funktion und einer simulierten **EV-Ladestation**. Basiert auf dem
-Aufbau von `../11_ERC4337`, **ohne** Admin-GUI, **ohne**
-Whitelist/Registry/Recovery-Modul – ein Transfer gelingt, solange das Guthaben
-reicht.
+**Parken**-Funktion, einer simulierten **EV-Ladestation** und einem
+**Velo-Verleih**. Basiert auf dem Aufbau von `../11_ERC4337`, **ohne** Admin-GUI,
+**ohne** Whitelist/Registry/Recovery-Modul – ein Transfer gelingt, solange das
+Guthaben reicht.
 
 > **Stand: 6. September 2026** · Contracts auf Sepolia deployt, Frontend + Backend
 > auf Vercel live (`heidi-coin.vercel.app`), Konto/Senden/Faucet/Gutschein/Parken
-> durchgetestet. Ladestation neu.
+> durchgetestet. Ladestation + Velo-Verleih neu.
 
 ```
  Passkey (WebAuthn)
@@ -19,7 +19,8 @@ reicht.
    │
    ├─ HeidiFranc (ERC-20, 2 Dezimalst.)   transfer · approve · faucet() · mint() (nur Owner)
    ├─ HeidiVoucher (LinkDrop)             createVoucher() · claim(ephemeral, recipient, sig)
-   └─ HeidiCharger (EV-Ladestation)       startCharge(kW) → HDI an Stations-Smart-Account · status()
+   ├─ HeidiCharger (EV-Ladestation)       startCharge(kW) → HDI an Stations-Smart-Account · status()
+   └─ HeidiBikes (Velo-Verleih)           rent(bikeId, min) · returnBike(bikeId, station) → Depot zurück
 
  Backend (api/heidi.js bzw. server/)   Reverse-Geocoding · Park-Rückerstattung · Gutschein-Erstellung
  /station.html                          Simulator-Ansicht der Ladestation (reiner Chain-Lesezugriff)
@@ -37,6 +38,7 @@ reicht.
 | **Gutschein** | Physischer Papiergutschein mit QR (LinkDrop). QR trägt einen Einmal-Privatekey; die App signiert damit eine an die eigene Adresse gebundene Nachricht, `HeidiVoucher.claim()` zahlt aus und macht den Gutschein unbrauchbar. **Front-running-sicher.** |
 | **Parken** | UI-Demo im Twint-Stil: Kennzeichen wählen, Standort per Geolocation, Dauer einstellen. Zahlung = `transfer` an die Park-Kasse. Früher beenden → das Backend erstattet anteilig aus der Park-Kasse zurück. |
 | **Laden (EV)** | Simulierte IoT-Ladestation mit **echtem** Smart Account. Die „Laden"-Ansicht ist gesperrt, bis der **QR-Code an der Säule** gescannt wird (`/station.html`-QR bzw. `?charge=`-Deeplink). Danach: ist die Station frei, wählt man **5 / 10 / 15 / 20 kW**; die Wallet sendet **eine** UserOperation (`approve` + `HeidiCharger.startCharge`), die HDI direkt ans Stations-Smart-Account zahlt. „Ladedauer" = `kW × secondsPerKw` (Zeitraffer), danach ist die Station wieder frei. Live-Fortschritt in der App und auf **`/station.html`**. |
+| **Velo-Verleih** | On-chain `HeidiBikes`: Velo wählen, vorgesehene Zeit einstellen, **reservieren** → **eine** UserOperation (`approve` + `rent`) legt ein festes **Depot** treuhänderisch im Contract ab. Rückgabe an einer der definierten **Stationen** (`returnBike`) zahlt das Depot zurück – **voll** bei pünktlicher Rückgabe, sonst **minus Strafe** je Minute Überzeit (gedeckelt aufs Depot; Strafe geht an den `operator`). Countdown + Live-Rückerstattung in der App. |
 
 ## Projektstruktur
 
@@ -45,6 +47,7 @@ contracts/
   HeidiFranc.sol      ERC-20, 2 Dezimalst., faucet() + mint() (onlyOwner)
   HeidiVoucher.sol    LinkDrop-Gutscheine (ephemeraler Key + Empfänger-Signatur)
   HeidiCharger.sol    EV-Ladestation: startCharge(kW), status(), zahlt ans Stations-SA
+  HeidiBikes.sol     Velo-Verleih: rent(bikeId,min) / returnBike(bikeId,station), Depot-Treuhand
 index.html · station.html   Wallet + Ladestations-Simulator (zwei Vite-Entries)
 src/
   user.js            gesamte Wallet-Logik
@@ -102,12 +105,16 @@ Grafiken: **[`docs/DESIGN-BRIEF.md`](docs/DESIGN-BRIEF.md)**.
 | `create-voucher.mjs`: „exceeds the balance" | Aussteller-EOA braucht Sepolia-**ETH** *und* **HDI** (Skript sendet normale Transaktionen, nicht gasfrei). |
 | „Laden" grau / „Ladestation nicht konfiguriert" | `VITE_CHARGER_ADDRESS` fehlt im Build. Nach `HeidiCharger`-Deploy setzen und neu deployen. |
 | Laden: „Station besetzt" obwohl scheinbar frei | Die vorige Ladung läuft laut Chain noch (`endsAt` in der Zukunft). „Aktualisieren" tippen oder `status()` auf Etherscan prüfen. |
+| „Velo" grau / „Velo-Verleih nicht konfiguriert" | `VITE_BIKES_ADDRESS` fehlt im Build. Nach `HeidiBikes`-Deploy setzen und neu deployen. |
+| Velo: „Gerade sind alle Velos unterwegs" | Alle Flotten-Velos haben `renter != 0`. Eines zurückgeben lassen oder `bikeInfo` auf Etherscan prüfen. |
 
 ## Sicherheitshinweis
 
 Lern-/Demo-Code für **Sepolia**. `HeidiFranc` ist ungedeckt. Parken ist eine
 UI-Demo (Rückerstattung kommt von einem Backend-Schlüssel, nicht trust-minimiert).
 Die Ladestation ist simuliert – die „Ladedauer" ist ein Zeitraffer, es fliesst
-kein Strom; nur die HDI-Zahlung ans Stations-Smart-Account ist real.
-Kennzeichen/Ort/Beträge/kW landen als Klartext-Events auf einer öffentlichen Chain.
-Nicht für Mainnet oder echten Wert.
+kein Strom; nur die HDI-Zahlung ans Stations-Smart-Account ist real. Der
+Velo-Verleih ist ebenfalls eine Demo (kein echtes Schloss); Depot-Treuhand und
+Rückerstattung laufen aber real über `HeidiBikes`.
+Kennzeichen/Ort/Beträge/kW/Velo-Stationen landen als Klartext-Events auf einer
+öffentlichen Chain. Nicht für Mainnet oder echten Wert.

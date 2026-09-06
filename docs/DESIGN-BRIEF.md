@@ -1,7 +1,8 @@
 # Heidi Wallet — Design-Briefing für Grafiker:in
 
-> **Status (6. September 2026): alle Assets geliefert, optimiert und eingebaut**
-> – inkl. der Ladestations-Grafiken (11–13, siehe unten).
+> **Status (6. September 2026): Assets 1–14 geliefert, optimiert und eingebaut.**
+> **Offen: Velo-Grafiken (15)** – `bike-hero.png`, `empty-bike.png`. Bis dahin
+> greifen die `onerror`-Fallbacks (kein Bild, App funktioniert).
 > Dieses Dokument bleibt als Referenz für Nachlieferungen / Neuauflagen. Die
 > finalen Dateien liegen in `public/` (ausgelieferte Grössen) bzw. `images/`
 > (Originale); PWA-Icons werden per `npm run icons` aus `images/logo.png` erzeugt.
@@ -137,6 +138,13 @@ die deutsche Bildunterschrift selbst):
   Alpengrün. Zustand „Ladung abgeschlossen" (Wallet + `/station`).
 - `charge-mark.png` — **200 × 200 px**, transparent: Blitz-/Stecker-Glyphe im
   Markenstil, wird mittig in den Lade-QR der Stationsseite gelegt.
+
+### 15 · Velo-Verleih
+- `bike-hero.png` — **640 × 400 px**, transparent: ein Velo an einer
+  Verleih-Station / einem Ständer, Alpenkulisse dahinter. Kopfbild der „Velo"-View.
+- `empty-bike.png` — **240 × 240 px**, transparent, ohne Text: ein einzelnes
+  Velo (Seitenansicht) oder ein leerer Veloständer. Zustand „alle Velos unterwegs"
+  bzw. „nicht konfiguriert".
 
 ---
 

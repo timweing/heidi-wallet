@@ -11,8 +11,9 @@ _Stand: 6. September 2026. Referenz-Deployment: `heidi-coin.vercel.app` (Sepolia
 
 ## 1 · Contracts (Remix)
 <https://remix.ethereum.org> → `contracts/HeidiFranc.sol` und
-`contracts/HeidiVoucher.sol` anlegen (die optionale `contracts/HeidiCharger.sol`
-kommt in Schritt 8). Für alle: Compiler **0.8.26–0.8.28**, Optimization an.
+`contracts/HeidiVoucher.sol` anlegen (die optionalen `contracts/HeidiCharger.sol`
+und `contracts/HeidiBikes.sol` kommen in Schritt 8 / 9). Für alle: Compiler
+**0.8.26–0.8.28**, Optimization an.
 OpenZeppelin-Imports (`@openzeppelin/contracts@5.1.0/…`, im Quelltext gepinnt)
 löst Remix automatisch von npm auf.
 
@@ -58,6 +59,7 @@ VITE_PIMLICO_API_KEY=pim_…          (API-KEY, nicht die Policy-ID – siehe 6)
 VITE_TOKEN_ADDRESS=0x…              (= TOKEN_ADDRESS)
 VITE_VOUCHER_ADDRESS=0x…           (= VOUCHER_ADDRESS)
 VITE_CHARGER_ADDRESS=0x…           (optional, EV-Ladestation – siehe 8)
+VITE_BIKES_ADDRESS=0x…             (optional, Velo-Verleih – siehe 9)
 VITE_PARK_TREASURY=0x…             (Adresse deiner EOA)
 VITE_PARK_RATE_PER_MIN=5
 VITE_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
@@ -154,6 +156,26 @@ inaktiv (kein Fehler). Danach:
 
 Die Station braucht **kein** Backend und **kein** ETH – sie empfängt nur HDI.
 
-## 9 · Contracts verifizieren (optional)
+## 9 · Velo-Verleih (optional)
+
+`contracts/HeidiBikes.sol` in Remix deployen. Constructor:
+
+| Param | Wert (Vorschlag) |
+|---|---|
+| `token_` | `TOKEN_ADDRESS` (HeidiFranc) |
+| `operator_` | deine EOA – bekommt die Überzeit-Strafen |
+| `depositBase_` | `2000`  (= 20.00 HDI Depot je Miete) |
+| `penaltyPerMinBase_` | `5`  (= 0.05 HDI je Minute über der geplanten Zeit) |
+| `bikeCount_` | `4` |
+| `stations_` | `["Bahnhof","Seepromenade","Bergbahn","Dorfplatz"]` |
+
+Deploy → Adresse = **`BIKES_ADDRESS`**. Dann `VITE_BIKES_ADDRESS` als **Config**
+in Vercel, `vercel --prod` neu. Ohne die Variable ist „Velo" inaktiv (kein Fehler).
+
+Das Depot wird im Contract treuhänderisch gehalten; bei `returnBike` zahlt der
+Contract `Depot − Strafe` an den Mieter und die Strafe an `operator_`. Kein
+Backend, kein ETH nötig – der Contract hält nur, was eingezahlt wurde.
+
+## 10 · Contracts verifizieren (optional)
 Remix-Plugin „Contract Verification – Etherscan" für alle Contracts, damit die
 App-Nutzer den Code auf `sepolia.etherscan.io` sehen.

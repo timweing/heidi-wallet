@@ -14,6 +14,7 @@ _Stand: 6. September 2026._
 | V6 | Frontend deployt, `…/api/heidi/config` liefert die richtigen Adressen; UI lädt (nicht nur Kopfzeile) | ☐ |
 | V7 | Zwei Geräte/Profile (Handy A/B) für Sende-Tests | ☐ |
 | V8 | *(für T7)* `HeidiCharger` deployt (`stationAccount()` = Station-SA), `VITE_CHARGER_ADDRESS` gesetzt | ☐ |
+| V9 | *(für T8)* `HeidiBikes` deployt (`bikeCount()` / `stationCount()` > 0), `VITE_BIKES_ADDRESS` gesetzt | ☐ |
 
 ## T1 · Konto & Faucet
 1. `/` öffnen → **Passkey jetzt aktivieren** → Smart-Account-Adresse erscheint.
@@ -74,11 +75,26 @@ Voraussetzung: `HeidiCharger` deployt, `VITE_CHARGER_ADDRESS` gesetzt, Wallet ha
 7. „Laden" verlassen und neu öffnen → wieder gesperrt, „Ladesäule scannen" nötig.
 8. Ohne `VITE_CHARGER_ADDRESS`: „Laden" zeigt „Ladestation nicht konfiguriert" (kein Crash).
 
-## T8 · Notfall-Konto
+## T8 · Velo-Verleih
+Voraussetzung: `HeidiBikes` deployt, `VITE_BIKES_ADDRESS` gesetzt, Wallet hat HDI (≥ Depot).
+1. Wallet → **Velo** → Liste freier Velos (Chips „Velo 1 · Bahnhof" …), Zeit-Stepper,
+   Depot-Betrag (`20.00 HDI`).
+2. **Velo 1** wählen, Zeit `30` Min, **Velo reservieren** → Passkey (eine UserOp
+   `approve` + `rent`). Verlauf: `-20.00 HDI` „Velo 1 · 30 Min". Etherscan:
+   Depot liegt im **HeidiBikes-Contract**.
+3. Aktive Karte: Countdown ab `30:00`, „Depot kommt voll zurück". Rückgabe-Station-Chips.
+4. **Vor** Ablauf **Dorfplatz** wählen → **Velo zurückgeben** → Passkey → Toast
+   „Depot 20.00 HDI erstattet", Verlauf `+20.00` „Dorfplatz · pünktlich". Velo wieder frei an „Dorfplatz".
+5. Zweite Miete, `15` Min, ~2 Min über die Zeit warten → Karte zeigt „X Min über · Strafe …
+   Rückerstattung ≈ …". Zurückgeben → Depot **minus** Strafe zurück, Strafe geht an `operator`.
+6. Während einer laufenden Miete `Velo` erneut öffnen → zeigt direkt die aktive Karte (kein Doppel-Mieten).
+7. Ohne `VITE_BIKES_ADDRESS`: „Velo" zeigt „Velo-Verleih nicht konfiguriert" (kein Crash).
+
+## T9 · Notfall-Konto
 1. „Mehr" → **Neues Konto (Notfall)** → Bestätigen → neuer Passkey, neue Adresse,
    Saldo `0.00`. Altes Guthaben ist über diese App nicht mehr erreichbar.
 
-## T9 · Randfälle
+## T10 · Randfälle
 | Fall | Erwartet |
 |---|---|
 | `VITE_*` fehlt | rote Notiz oben, Log-Eintrag |
@@ -100,6 +116,9 @@ Voraussetzung: `HeidiCharger` deployt, `VITE_CHARGER_ADDRESS` gesetzt, Wallet ha
 | Laden: **„Ladestation nicht konfiguriert"** | `VITE_CHARGER_ADDRESS` fehlt im Build. Setzen, `vercel --prod` neu. |
 | Laden: **„Station nicht erreichbar"** / `/station.html` rote Notiz | `VITE_CHARGER_ADDRESS` zeigt nicht auf einen `HeidiCharger`-Contract auf Sepolia, oder RPC down. Adresse + `VITE_RPC_URL` prüfen. |
 | Laden: **„Station besetzt"** trotz freier Säule | Chain-`status()` sagt `endsAt` liegt noch in der Zukunft. „Aktualisieren" tippen; ggf. bis `endsAt` warten. |
+| Velo: **„Velo-Verleih nicht konfiguriert"** | `VITE_BIKES_ADDRESS` fehlt im Build. Setzen, `vercel --prod` neu. |
+| Velo: **„nicht dein Velo"** beim Zurückgeben | Miete läuft auf einer anderen Adresse (z. B. nach „Neues Konto"). Nur die mietende Adresse kann zurückgeben. |
+| Velo: Rückerstattung kleiner als erwartet | Überzeit – Strafe `penaltyPerMinBase × Minuten über `plannedMin``, gedeckelt aufs Depot. |
 
 ## Protokoll
 | Test | Datum | Ergebnis | Tx / Notiz |
@@ -111,5 +130,6 @@ Voraussetzung: `HeidiCharger` deployt, `VITE_CHARGER_ADDRESS` gesetzt, Wallet ha
 | T5 | | | |
 | T6 | | | |
 | T7 (Laden) | | | |
-| T8 | | | |
+| T8 (Velo) | | | |
 | T9 | | | |
+| T10 | | | |

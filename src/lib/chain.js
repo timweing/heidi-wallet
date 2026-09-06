@@ -32,6 +32,21 @@ export const chargerAbi = parseAbi([
 ])
 const ChargeStartedEvent = chargerAbi.find((x) => x.type === 'event' && x.name === 'ChargeStarted')
 
+export const bikesAbi = parseAbi([
+  'function token() view returns (address)',
+  'function operator() view returns (address)',
+  'function depositBase() view returns (uint256)',
+  'function penaltyPerMinBase() view returns (uint256)',
+  'function bikeCount() view returns (uint256)',
+  'function stationCount() view returns (uint256)',
+  'function stations(uint256) view returns (string)',
+  'function bikeInfo(uint8 bikeId) view returns (address renter, uint64 startedAt, uint32 plannedMin, uint256 deposit, uint8 station, uint256 usedMin, uint256 overMin, uint256 penalty)',
+  'function rent(uint8 bikeId, uint32 plannedMin)',
+  'function returnBike(uint8 bikeId, uint8 stationId)',
+  'event Rented(uint8 indexed bikeId, address indexed renter, uint32 plannedMin, uint256 deposit, uint64 startedAt)',
+  'event Returned(uint8 indexed bikeId, address indexed renter, uint8 stationId, uint256 usedMin, uint256 penalty, uint256 refund)',
+])
+
 export const voucherAbi = parseAbi([
   'function amountOf(address) view returns (uint256)',
   'function claimed(address) view returns (bool)',
@@ -46,6 +61,8 @@ const TransferEvent = tokenEvents[0]
 const TOK = () => getAddress(CONFIG.TOKEN_ADDRESS)
 const VOU = () => getAddress(CONFIG.VOUCHER_ADDRESS)
 const CHG = () => getAddress(CONFIG.CHARGER_ADDRESS)
+const BIKE = () => getAddress(CONFIG.BIKES_ADDRESS)
+const ZERO_ADDR = '0x0000000000000000000000000000000000000000'
 
 export async function readBalance(address) {
   return publicClient.readContract({ address: TOK(), abi: tokenAbi, functionName: 'balanceOf', args: [getAddress(address)] })
@@ -99,6 +116,41 @@ export async function readChargerStatus() {
     paid,
     remaining: Number(remaining),
   }
+}
+
+// ---------------------------------------------------------------- Velo-Verleih
+
+export async function readBikesState() {
+  const [operator, depositBase, penaltyPerMinBase, bikeCountBn, stationCountBn] = await Promise.all([
+    publicClient.readContract({ address: BIKE(), abi: bikesAbi, functionName: 'operator' }),
+    publicClient.readContract({ address: BIKE(), abi: bikesAbi, functionName: 'depositBase' }),
+    publicClient.readContract({ address: BIKE(), abi: bikesAbi, functionName: 'penaltyPerMinBase' }),
+    publicClient.readContract({ address: BIKE(), abi: bikesAbi, functionName: 'bikeCount' }),
+    publicClient.readContract({ address: BIKE(), abi: bikesAbi, functionName: 'stationCount' }),
+  ])
+  const nBikes = Number(bikeCountBn)
+  const nStations = Number(stationCountBn)
+  const stations = await Promise.all(
+    Array.from({ length: nStations }, (_, i) =>
+      publicClient.readContract({ address: BIKE(), abi: bikesAbi, functionName: 'stations', args: [BigInt(i)] })),
+  )
+  const infos = await Promise.all(
+    Array.from({ length: nBikes }, (_, id) =>
+      publicClient.readContract({ address: BIKE(), abi: bikesAbi, functionName: 'bikeInfo', args: [id] })),
+  )
+  const bikes = infos.map(([renter, startedAt, plannedMin, deposit, station, usedMin, overMin, penalty], id) => ({
+    id,
+    renter: renter === ZERO_ADDR ? null : getAddress(renter),
+    available: renter === ZERO_ADDR,
+    startedAt: Number(startedAt),
+    plannedMin: Number(plannedMin),
+    deposit,
+    station: Number(station),
+    usedMin: Number(usedMin),
+    overMin: Number(overMin),
+    penalty,
+  }))
+  return { operator: getAddress(operator), depositBase, penaltyPerMinBase, stations, bikes }
 }
 
 export async function readChargeLog({ limit = 8 } = {}) {

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Heidi Wallet – Stablecoin-Wallet (ERC-4337 Passkey, gasfrei) mit Gutschein, Parken & EV-Ladestation",
+  "description": "Heidi Wallet – Stablecoin-Wallet (ERC-4337 Passkey, gasfrei) mit Gutschein, Parken, EV-Ladestation & Velo-Verleih",
   "scripts": {
     "icons": "node scripts/build-logo-icons.mjs",
     "prebuild": "node scripts/build-logo-icons.mjs",

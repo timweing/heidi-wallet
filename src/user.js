@@ -6,7 +6,7 @@
 
 import { parseUnits, formatUnits, isAddress } from 'viem'
 import { CONFIG, configProblems } from './lib/config.js'
-import { tokenAbi, voucherAbi, chargerAbi, getAddress, readBalance, readTokenMeta, isDeployed, readTokenHistory, readVoucher, readChargerMeta, readChargerStatus } from './lib/chain.js'
+import { tokenAbi, voucherAbi, chargerAbi, bikesAbi, getAddress, readBalance, readTokenMeta, isDeployed, readTokenHistory, readVoucher, readChargerMeta, readChargerStatus, readBikesState } from './lib/chain.js'
 import { hasStoredAccount, createPasskeyAccount, buildAccount, sendCalls, forgetAccount } from './lib/smart-account.js'
 import { friendsStore, historyStore, platesStore, parkingStore } from './lib/store.js'
 import { toQRDataURL, buildAddressURI, createScanner } from './lib/qr.js'
@@ -28,12 +28,18 @@ let pendingVoucherKey = null
 let chargerMeta = null
 let chargeTimer = 0
 let chargeUnlocked = false // erst nach Scan des Ladesäulen-QR (oder ?charge=-Deeplink)
+let bikeDur = 30
+let bikeSel = null
+let returnStationSel = null
+let bikeTimer = 0
 
 const KW_OPTIONS = [5, 10, 15, 20]
 const TOKEN = () => getAddress(CONFIG.TOKEN_ADDRESS)
 const VOUCHER = () => getAddress(CONFIG.VOUCHER_ADDRESS)
 const CHARGER = () => getAddress(CONFIG.CHARGER_ADDRESS)
+const BIKES = () => getAddress(CONFIG.BIKES_ADDRESS)
 const mmss = (s) => `${String(Math.floor(Math.max(0, s) / 60)).padStart(2, '0')}:${String(Math.max(0, s) % 60).padStart(2, '0')}`
+const bnMin = (a, b) => (a < b ? a : b)
 const fmt = (base) => Number(formatUnits(base, meta.decimals)).toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const parseAmt = (s) => parseUnits(String(s), meta.decimals)
 
@@ -86,7 +92,7 @@ function emptyState(img, text) {
 
 // ---------------------------------------------------------------- navigation
 
-const TITLES = { send: 'Senden', receive: 'Empfangen', split: 'Alpen-Split', parking: 'Parken', voucher: 'Gutschein', charge: 'Laden', friends: 'Freunde', history: 'Verlauf', settings: 'Mehr' }
+const TITLES = { send: 'Senden', receive: 'Empfangen', split: 'Alpen-Split', parking: 'Parken', voucher: 'Gutschein', charge: 'Laden', bike: 'Velo', friends: 'Freunde', history: 'Verlauf', settings: 'Mehr' }
 
 function showView(name) {
   $$('.view').forEach((v) => (v.hidden = v.dataset.view !== name))
@@ -113,6 +119,8 @@ function showView(name) {
     chargeScanner.stop()
     chargeUnlocked = false // beim Verlassen wieder sperren – Scan an der Säule nötig
   }
+  if (name === 'bike') renderBike().catch((e) => log.err(errText(e)))
+  else clearTimeout(bikeTimer)
 }
 
 // ---------------------------------------------------------------- account
@@ -607,6 +615,143 @@ async function startCharge(kW) {
   await renderCharge()
 }
 
+// ---------------------------------------------------------------- Velo-Verleih (on-chain)
+
+async function renderBike() {
+  clearTimeout(bikeTimer)
+  const box = $('#bike-body')
+  const refresh = $('#bike-refresh')
+  if (!isAddress(CONFIG.BIKES_ADDRESS)) {
+    refresh.hidden = true
+    box.replaceChildren(emptyState('/empty-bike.png', 'Velo-Verleih nicht konfiguriert – VITE_BIKES_ADDRESS fehlt.'))
+    return
+  }
+  box.replaceChildren(el('div', { class: 'empty' }, 'Velo-Verleih wird geladen …'))
+  let s
+  try {
+    s = await readBikesState()
+  } catch (e) {
+    refresh.hidden = true
+    box.replaceChildren(emptyState('/empty-bike.png', `Verleih nicht erreichbar: ${errText(e)}`))
+    return
+  }
+  refresh.hidden = false
+  const m = { operator: s.operator, depositBase: s.depositBase, penaltyPerMinBase: s.penaltyPerMinBase, stations: s.stations }
+  const mine = s.bikes.find((b) => b.renter && sa && b.renter.toLowerCase() === sa.account.address.toLowerCase())
+  if (mine) renderBikeActive(box, m, mine)
+  else renderBikeForm(box, m, s.bikes)
+}
+
+function renderBikeForm(box, m, bikes) {
+  const avail = bikes.filter((b) => b.available)
+  if (!avail.length) {
+    box.replaceChildren(emptyState('/empty-bike.png', 'Gerade sind alle Velos unterwegs – später erneut versuchen.'))
+    return
+  }
+  if (bikeSel == null || !avail.some((b) => b.id === bikeSel)) bikeSel = avail[0].id
+
+  const chips = el('div', { class: 'chip-row' }, ...avail.map((b) =>
+    el('button', {
+      class: `chip${b.id === bikeSel ? ' sel' : ''}`, type: 'button',
+      onclick: () => { bikeSel = b.id; renderBike() },
+    }, el('span', { class: 'avatar' }, '🚲'), `Velo ${b.id + 1}`,
+      el('span', { class: 'muted', style: 'font-size:.72rem' }, ` · ${m.stations[b.station] ?? '–'}`))))
+
+  const stepper = el('div', { class: 'stepper' },
+    el('button', { onclick: () => { bikeDur = Math.max(15, bikeDur - 15); renderBike() } }, '−'),
+    el('span', { class: 'val' }, `${bikeDur} Min`),
+    el('button', { onclick: () => { bikeDur = Math.min(240, bikeDur + 15); renderBike() } }, '+'))
+
+  box.replaceChildren(
+    el('h3', { class: 'sec' }, 'Velo wählen'),
+    chips,
+    el('h3', { class: 'sec', style: 'margin-top:6px' }, 'Vorgesehene Zeit'),
+    stepper,
+    el('div', { class: 'fee-hint', style: 'text-align:left;margin-top:8px' },
+      'Depot ', el('b', {}, `${fmt(m.depositBase)} ${meta.symbol}`),
+      ` – bei pünktlicher Rückgabe voll zurück, sonst −${fmt(m.penaltyPerMinBase)} ${meta.symbol}/Min über der Zeit.`),
+    el('button', {
+      class: 'cta-full', style: 'margin-top:12px',
+      onclick: (e) => busy(e.target, () => rentBike(bikeSel, bikeDur, m)),
+    }, `Velo reservieren – Depot ${fmt(m.depositBase)} ${meta.symbol}`),
+  )
+}
+
+function renderBikeActive(box, m, b) {
+  if (returnStationSel == null) returnStationSel = b.station
+  const endTs = b.startedAt + b.plannedMin * 60
+  const tick = () => {
+    const now = Math.floor(Date.now() / 1000)
+    const left = endTs - now
+    const over = left < 0
+    const usedMin = Math.max(0, Math.ceil((now - b.startedAt) / 60))
+    const overMin = Math.max(0, usedMin - b.plannedMin)
+    const penalty = bnMin(b.deposit, BigInt(overMin) * m.penaltyPerMinBase)
+    const refund = b.deposit - penalty
+    box.replaceChildren(
+      el('div', { class: 'session-card' },
+        el('div', { class: 'sub' }, `Velo ${b.id + 1} · Depot ${fmt(b.deposit)} ${meta.symbol}`),
+        el('div', { class: 'big' }, over ? `+${mmss(-left)} über` : mmss(left)),
+        el('div', { class: 'sub' }, over
+          ? `${overMin} Min über · Strafe ${fmt(penalty)} · Rückerstattung ≈ ${fmt(refund)} ${meta.symbol}`
+          : `geplant ${b.plannedMin} Min · Depot kommt voll zurück`),
+      ),
+      el('h3', { class: 'sec', style: 'margin-top:4px' }, 'Rückgabe-Station'),
+      el('div', { class: 'chip-row' }, ...m.stations.map((name, i) =>
+        el('button', {
+          class: `chip${i === returnStationSel ? ' sel' : ''}`, type: 'button',
+          onclick: () => { returnStationSel = i; renderBike() },
+        }, name))),
+      el('button', {
+        class: 'cta-full', style: 'margin-top:12px',
+        onclick: (e) => busy(e.target, () => returnBike(b, returnStationSel, m)),
+      }, 'Velo zurückgeben'),
+    )
+    bikeTimer = setTimeout(tick, 1000)
+  }
+  tick()
+}
+
+async function rentBike(bikeId, plannedMin, m) {
+  if (!sa) throw new Error('Kein Konto')
+  if (bikeId == null) return toast('Velo wählen', 'err')
+  const bal = await readBalance(sa.account.address).catch(() => 0n)
+  if (bal < m.depositBase) { toast(`Zu wenig Guthaben – Depot ${fmt(m.depositBase)} ${meta.symbol} nötig`, 'err'); return }
+  toast('Signiere mit Passkey …')
+  log.line(`Velo ${bikeId + 1} reservieren · ${plannedMin} Min · Depot ${fmt(m.depositBase)} ${meta.symbol} …`)
+  const r = await sendCalls(sa.client, [
+    { to: TOKEN(), abi: tokenAbi, functionName: 'approve', args: [BIKES(), m.depositBase] },
+    { to: BIKES(), abi: bikesAbi, functionName: 'rent', args: [bikeId, plannedMin] },
+  ])
+  historyStore.add({ direction: 'out', address: BIKES(), name: 'Velo-Depot', amount: fmt(m.depositBase), purpose: `Velo ${bikeId + 1} · ${plannedMin} Min`, txHash: r.txHash })
+  log.ok(`Velo reserviert · Block ${r.block} · <a href="${explorerTx(r.txHash)}" target="_blank" rel="noreferrer">Tx</a> · Gas gesponsert`)
+  vibrate([15, 30, 15])
+  toast('Velo reserviert – gute Fahrt!', 'ok')
+  await refresh()
+  await renderBike()
+}
+
+async function returnBike(b, stationId, m) {
+  if (!sa) throw new Error('Kein Konto')
+  const now = Math.floor(Date.now() / 1000)
+  const usedMin = Math.max(0, Math.ceil((now - b.startedAt) / 60))
+  const overMin = Math.max(0, usedMin - b.plannedMin)
+  const penalty = bnMin(b.deposit, BigInt(overMin) * m.penaltyPerMinBase)
+  const refund = b.deposit - penalty
+  log.line(`Velo ${b.id + 1} zurückgeben → ${m.stations[stationId]} …`)
+  const r = await sendCalls(sa.client, [{ to: BIKES(), abi: bikesAbi, functionName: 'returnBike', args: [b.id, stationId] }])
+  historyStore.add({
+    direction: 'in', address: BIKES(), name: 'Velo-Depot zurück', amount: fmt(refund),
+    purpose: `${m.stations[stationId]}${overMin ? ` · ${overMin} Min über · −${fmt(penalty)}` : ' · pünktlich'}`, txHash: r.txHash,
+  })
+  log.ok(`Zurückgegeben · Depot ${fmt(refund)} ${meta.symbol} zurück · <a href="${explorerTx(r.txHash)}" target="_blank" rel="noreferrer">Tx</a>`)
+  vibrate([15, 30, 15])
+  toast(`Depot ${fmt(refund)} ${meta.symbol} erstattet`, 'ok')
+  returnStationSel = null
+  await refresh()
+  await renderBike()
+}
+
 // ---------------------------------------------------------------- Parking (UI-Demo)
 
 function parkCostBase() {
@@ -830,6 +975,9 @@ function wire() {
       }
     }).catch((e) => toast(errText(e), 'err'))
   $('#charge-refresh').onclick = () => renderCharge().catch((e) => toast(errText(e), 'err'))
+
+  // Velo
+  $('#bike-refresh').onclick = () => renderBike().catch((e) => toast(errText(e), 'err'))
 
   // Parken
   $('#park-minus').onclick = () => { parkDur = Math.max(15, parkDur - 15); renderParking() }
