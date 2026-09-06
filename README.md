@@ -67,12 +67,24 @@ docs/                 DEPLOYMENT · TESTPLAN · DESIGN-BRIEF
 ```bash
 npm install
 cp .env.example .env       # VITE_* + Backend-Teil ausfüllen
-npm run dev                # http://localhost:5174
+npm run dev                # Wallet  http://localhost:5174/
+                           # Ladestation  http://localhost:5174/station.html
 npm run server             # Backend auf :8788 (fuer Parken-Rueckerstattung / Geocode)
 ```
 
 > Frontend erwartet das Backend unter `/api/heidi` (gleiche Domain). Lokal
-> `VITE_API_URL=http://localhost:8788/api/heidi` setzen.
+> `VITE_API_URL=http://localhost:8788/api/heidi` setzen. Für „Laden" muss
+> `VITE_CHARGER_ADDRESS` in `.env` stehen (sonst ist die Funktion inaktiv).
+
+### npm-Scripts
+
+| Script | Zweck |
+|---|---|
+| `npm run dev` / `build` / `preview` | Vite (zwei Entries: `index.html`, `station.html`) |
+| `npm run server` | lokaler Backend-Server (`api/_lib/heidi-app.js`) auf `:8788` |
+| `npm run icons` | PWA-Icons aus `images/logo.png` erzeugen (läuft auch als `prebuild`) |
+| `npm run voucher -- <HDI> [Anzahl]` | Gutschein(e) anlegen + druckbare QR-PNGs |
+| `npm run station-account` | Smart Account der Ladestation erzeugen + on-chain deployen |
 
 Deployment (Remix + Vercel): **[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)**.
 Testplan: **[`docs/TESTPLAN.md`](docs/TESTPLAN.md)**.

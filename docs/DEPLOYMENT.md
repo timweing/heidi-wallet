@@ -11,7 +11,8 @@ _Stand: 6. September 2026. Referenz-Deployment: `heidi-coin.vercel.app` (Sepolia
 
 ## 1 · Contracts (Remix)
 <https://remix.ethereum.org> → `contracts/HeidiFranc.sol` und
-`contracts/HeidiVoucher.sol` anlegen. Compiler **0.8.26–0.8.28**, Optimization an.
+`contracts/HeidiVoucher.sol` anlegen (die optionale `contracts/HeidiCharger.sol`
+kommt in Schritt 8). Für alle: Compiler **0.8.26–0.8.28**, Optimization an.
 OpenZeppelin-Imports (`@openzeppelin/contracts@5.1.0/…`, im Quelltext gepinnt)
 löst Remix automatisch von npm auf.
 
@@ -77,8 +78,10 @@ VITE_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
 npm install
 vercel --prod        # Frontend + api/heidi Function in einem Deploy
 ```
-`vercel.json` setzt `maxDuration: 60` für die Function. **Nach jeder Änderung an
-`VITE_*`-Variablen neu deployen** – sie werden nur beim Build übernommen.
+`vercel.json` setzt `maxDuration: 60` für die Function und leitet `/api/heidi/*`
+(eine Rewrite-Regel) an `api/heidi.js` sowie `/station` an `/station.html`.
+**Nach jeder Änderung an `VITE_*`-Variablen neu deployen** – sie werden nur beim
+Build übernommen.
 
 ## 6 · Pimlico – API-Key ≠ Policy-ID
 
@@ -121,7 +124,7 @@ Smart Account muss existieren, bevor der Contract deployt wird.
 ### 8.1 · Stations-Smart-Account erzeugen
 ```bash
 # .env muss VITE_PIMLICO_API_KEY (+ optional VITE_RPC_URL) enthalten
-node scripts/create-station-account.mjs
+npm run station-account          # = node scripts/create-station-account.mjs
 ```
 Gibt **Owner-Key**, **Owner-Adresse** und **Station-SA** aus und deployt das
 Konto on-chain (gasfreie No-Op-UserOperation über Pimlico). Owner-Key sicher

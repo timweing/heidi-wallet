@@ -64,7 +64,8 @@ Voraussetzung: `HeidiCharger` deployt, `VITE_CHARGER_ADDRESS` gesetzt, Wallet ha
    „Station frei", vier Buttons `5 / 10 / 15 / 20 kW` mit Preis (`0.30 HDI` pro kW → 5 kW = `1.50`).
    *(Alternativ: QR mit der Handy-Kamera → Deeplink `?charge=…` öffnet die Wallet direkt in „Laden".)*
 3. **10 kW** tippen → Passkey → Toast „10 kW – dein Auto wird geladen". Verlauf: `-3.00 HDI`,
-   Zweck „10 kW laden". Etherscan: HDI ging an das **Stations-Smart-Account**.
+   Zweck „10 kW laden". Etherscan: HDI ging an das **Stations-Smart-Account**. Auf
+   `/station.html` erscheint die Ladung unter **„Letzte Ladungen"**.
 4. App zeigt Fortschrittsbalken + „noch mm:ss"; `/station.html` zeigt **BESETZT** (rot,
    Puls), `%` und `kW von 10`. Nach `10 × 6 s = 60 s` → beide zeigen „abgeschlossen",
    Station wieder **FREI**.
