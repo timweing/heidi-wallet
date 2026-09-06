@@ -24,11 +24,15 @@ export default defineConfig({
       workbox: {
         navigateFallback: null,
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,woff2}'],
+        // Grafiken bitte vorher optimieren (~<400 KB). Der Puffer verhindert nur,
+        // dass ein versehentlich grosses Asset den Build/Deploy hart abbricht –
+        // es wird dann trotzdem präcacht.
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
       manifest: {
         name: 'Heidi Wallet',
         short_name: 'Heidi',
-        description: 'Alpenguthaben – Stablecoin-Wallet mit Gutschein & Parken',
+        description: 'Alpenguthaben – Wallet mit Gutschein, Parken, Laden & Velo',
         lang: 'de',
         start_url: '/',
         scope: '/',
