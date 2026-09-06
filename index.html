@@ -68,11 +68,14 @@
             <button class="qa" data-nav="send"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>Senden</button>
             <button class="qa" data-nav="receive"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M14 14h3v3h-3zM20 14v3M17 20h3"/></svg></span>Empfangen</button>
             <button class="qa" data-nav="split"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3 2.2-5 5-5s5 2 5 5M14.5 20c.3-2.2 1.8-3.8 4-3.8s3.4 1.4 3.8 3.4"/></svg></span>Aufteilen</button>
-            <button class="qa" data-nav="parking"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 17V7h3.5a2.5 2.5 0 0 1 0 5H9"/></svg></span>Parken</button>
             <button class="qa" data-nav="voucher"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z"/><path d="M14 5v14"/></svg></span>Gutschein</button>
-            <button class="qa" data-nav="charge"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg></span>Laden</button>
-            <button class="qa" data-nav="bike"><span class="qa-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.3"/><circle cx="18.5" cy="17.5" r="3.3"/><path d="M6 17.5 12 6h4M9 6h4l4 11.5"/></svg></span>Velo</button>
           </div>
+
+          <button class="submenu-link" data-nav="mobility">
+            <span class="submenu-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.4"/><circle cx="18" cy="5" r="2.4"/><path d="M8.4 19H14a3.5 3.5 0 0 0 0-7h-4a3.5 3.5 0 0 1 0-7h5.5"/></svg></span>
+            <span class="submenu-text"><b>Unterwegs</b><span>Parken · Laden · Velo</span></span>
+            <span class="submenu-chev" aria-hidden="true">›</span>
+          </button>
 
           <h3 class="sec">Alpen-Aktivitäten</h3>
           <div id="activity-feed" class="activity-feed"></div>
@@ -163,6 +166,27 @@
           <button id="btn-voucher-scan" class="cta-full">Gutschein scannen</button>
           <div id="voucher-scan-mount" class="scan-mount" hidden></div>
           <div id="voucher-result" hidden></div>
+        </section>
+
+        <!-- MOBILITY (Untermenü) -->
+        <section class="view" data-view="mobility" hidden>
+          <div class="menu-list">
+            <button class="menu-row" data-nav="parking">
+              <span class="menu-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 17V7h3.5a2.5 2.5 0 0 1 0 5H9"/></svg></span>
+              <span class="menu-main"><b>Parken</b><span>Parkgebühr zahlen, früher beenden = Rest zurück</span></span>
+              <span class="menu-chev" aria-hidden="true">›</span>
+            </button>
+            <button class="menu-row" data-nav="charge">
+              <span class="menu-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg></span>
+              <span class="menu-main"><b>Laden</b><span>EV-Ladestation – QR scannen, kW wählen</span></span>
+              <span class="menu-chev" aria-hidden="true">›</span>
+            </button>
+            <button class="menu-row" data-nav="bike">
+              <span class="menu-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.3"/><circle cx="18.5" cy="17.5" r="3.3"/><path d="M6 17.5 12 6h4M9 6h4l4 11.5"/></svg></span>
+              <span class="menu-main"><b>Velo</b><span>Velo mieten, Depot hinterlegen, an Station zurück</span></span>
+              <span class="menu-chev" aria-hidden="true">›</span>
+            </button>
+          </div>
         </section>
 
         <!-- CHARGE -->

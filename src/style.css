@@ -172,14 +172,48 @@ tr:last-child td { border-bottom: 0; }
 .balance-addr .addr-chip { background: rgba(255, 255, 255, 0.16); color: #fff; }
 .balance-addr .addr-chip button { color: rgba(255, 255, 255, 0.85); }
 
-.quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 8px; }
+.quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .qa { background: transparent; color: var(--ink); padding: 0; display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 0.7rem; font-weight: 700; }
 .qa-ico {
-  width: 50px; height: 50px; border-radius: 50%;
+  width: 48px; height: 48px; border-radius: 50%;
   background: linear-gradient(155deg, var(--gold), #a9861c);
   display: grid; place-items: center; box-shadow: var(--shadow-soft);
 }
 .qa-ico svg { width: 20px; height: 20px; color: #fff; }
+
+/* Untermenü-Einstieg auf Home + Menüzeilen in der Mobilitäts-Ansicht */
+.submenu-link {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: 11px 14px; color: var(--ink); box-shadow: var(--shadow-soft);
+}
+.submenu-ico {
+  width: 38px; height: 38px; border-radius: 50%; flex: none;
+  background: linear-gradient(155deg, var(--gold), #a9861c);
+  display: grid; place-items: center;
+}
+.submenu-ico svg { width: 18px; height: 18px; color: #fff; }
+.submenu-text { flex: 1; display: flex; flex-direction: column; text-align: left; gap: 1px; }
+.submenu-text b { font-size: 0.92rem; }
+.submenu-text span { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+.submenu-chev { color: var(--muted); font-size: 1.3rem; line-height: 1; }
+
+.menu-list { display: flex; flex-direction: column; gap: 10px; }
+.menu-row {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: 15px 16px; color: var(--ink); box-shadow: var(--shadow-soft);
+}
+.menu-ico {
+  width: 44px; height: 44px; border-radius: 50%; flex: none;
+  background: linear-gradient(155deg, var(--gold), #a9861c);
+  display: grid; place-items: center;
+}
+.menu-ico svg { width: 20px; height: 20px; color: #fff; }
+.menu-main { flex: 1; display: flex; flex-direction: column; text-align: left; gap: 2px; }
+.menu-main b { font-size: 1rem; }
+.menu-main span { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+.menu-chev { color: var(--muted); font-size: 1.4rem; line-height: 1; }
 
 .activity-feed { display: flex; flex-direction: column; gap: 2px; }
 .activity-row { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--border); }

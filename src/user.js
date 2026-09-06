@@ -92,9 +92,13 @@ function emptyState(img, text) {
 
 // ---------------------------------------------------------------- navigation
 
-const TITLES = { send: 'Senden', receive: 'Empfangen', split: 'Alpen-Split', parking: 'Parken', voucher: 'Gutschein', charge: 'Laden', bike: 'Velo', friends: 'Freunde', history: 'Verlauf', settings: 'Mehr' }
+const TITLES = { send: 'Senden', receive: 'Empfangen', split: 'Alpen-Split', mobility: 'Unterwegs', parking: 'Parken', voucher: 'Gutschein', charge: 'Laden', bike: 'Velo', friends: 'Freunde', history: 'Verlauf', settings: 'Mehr' }
+// Zurück-Pfeil führt aus dem Untermenü zurück ins Untermenü, sonst nach Home.
+const PARENT = { parking: 'mobility', charge: 'mobility', bike: 'mobility' }
+let currentView = 'home'
 
 function showView(name) {
+  currentView = name
   $$('.view').forEach((v) => (v.hidden = v.dataset.view !== name))
   $$('.bottom-nav .nav-item[data-nav]').forEach((b) => b.classList.toggle('active', b.dataset.nav === name))
   const isHome = name === 'home'
@@ -111,6 +115,7 @@ function showView(name) {
   if (name === 'split') refreshSplitUI()
   if (name === 'history') loadHistory().catch((e) => log.err(errText(e)))
   if (name === 'parking') renderParking()
+  else clearInterval(parkTimer)
   if (name === 'voucher') resetVoucherView()
   if (name === 'charge') {
     renderCharge().catch((e) => log.err(errText(e)))
@@ -928,7 +933,7 @@ function wire() {
   })
 
   $$('[data-nav]').forEach((b) => b.addEventListener('click', () => showView(b.dataset.nav)))
-  $('#nav-back').onclick = () => showView('home')
+  $('#nav-back').onclick = () => showView(PARENT[currentView] || 'home')
   $('#nav-scan').onclick = openNavScan
   $('#nav-scan-cancel').onclick = closeNavScan
 

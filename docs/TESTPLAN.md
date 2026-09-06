@@ -48,6 +48,7 @@ _Stand: 6. September 2026._
    Gutschein-Ansicht und prüft automatisch.
 
 ## T6 · Parken
+*Zugriff: Home → **Unterwegs** → Parken (Untermenü). Zurück-Pfeil führt nach „Unterwegs" zurück.*
 1. „Parken" → Standortfreigabe erlauben → Adresse erscheint (Reverse-Geocode).
 2. Kennzeichen `LU 12345` eingeben, **Merken** → erscheint als Chip.
 3. Dauer auf `30` Min → Kosten `1.50 HDI`. **Parken starten** → Transfer an die
@@ -60,7 +61,7 @@ _Stand: 6. September 2026._
 ## T7 · Laden (EV-Ladestation)
 Voraussetzung: `HeidiCharger` deployt, `VITE_CHARGER_ADDRESS` gesetzt, Wallet hat HDI.
 1. `/station.html` öffnen → **FREI**, grünes Lämpchen, QR sichtbar, Stations-Konto + Guthaben.
-2. Wallet → **Laden** → zeigt **nur** „Ladesäule scannen" (keine kW-Auswahl ohne Scan).
+2. Wallet → **Unterwegs → Laden** → zeigt **nur** „Ladesäule scannen" (keine kW-Auswahl ohne Scan).
    „Ladesäule scannen" → QR von `/station.html` scannen → Toast „Ladesäule erkannt" →
    „Station frei", vier Buttons `5 / 10 / 15 / 20 kW` mit Preis (`0.30 HDI` pro kW → 5 kW = `1.50`).
    *(Alternativ: QR mit der Handy-Kamera → Deeplink `?charge=…` öffnet die Wallet direkt in „Laden".)*
@@ -77,7 +78,7 @@ Voraussetzung: `HeidiCharger` deployt, `VITE_CHARGER_ADDRESS` gesetzt, Wallet ha
 
 ## T8 · Velo-Verleih
 Voraussetzung: `HeidiBikes` deployt, `VITE_BIKES_ADDRESS` gesetzt, Wallet hat HDI (≥ Depot).
-1. Wallet → **Velo** → Liste freier Velos (Chips „Velo 1 · Bahnhof" …), Zeit-Stepper,
+1. Wallet → **Unterwegs → Velo** → Liste freier Velos (Chips „Velo 1 · Bahnhof" …), Zeit-Stepper,
    Depot-Betrag (`20.00 HDI`).
 2. **Velo 1** wählen, Zeit `30` Min, **Velo reservieren** → Passkey (eine UserOp
    `approve` + `rent`). Verlauf: `-20.00 HDI` „Velo 1 · 30 Min". Etherscan:
@@ -97,6 +98,7 @@ Voraussetzung: `HeidiBikes` deployt, `VITE_BIKES_ADDRESS` gesetzt, Wallet hat HD
 ## T10 · Randfälle
 | Fall | Erwartet |
 |---|---|
+| Home: **Unterwegs** antippen | Untermenü mit Parken / Laden / Velo; Zurück-Pfeil aus einem Eintrag führt nach „Unterwegs", von dort nach Home |
 | `VITE_*` fehlt | rote Notiz oben, Log-Eintrag |
 | kein HTTPS/localhost | Passkey-/Kamera-Buttons ohne Wirkung |
 | Standort verweigert | „Standort nicht freigegeben", Parken trotzdem möglich |
